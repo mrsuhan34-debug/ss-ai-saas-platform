@@ -1,56 +1,20 @@
-// 🎯 এরর-প্রুফ রিয়াল গুগল জিমেইল গেটওয়ে (১০০% ওয়ার্কিং ট্রিক)
-function connectGoogle() { 
-    let width = 480; let height = 550;
-    let left = (screen.width / 2) - (width / 2); let top = (screen.height / 2) - (height / 2);
-    
-    // একটি ব্ল্যাংক পপ-আপ উইন্ডো খুলবে যা এরর খাবে না
-    let googleWin = window.open("", "GoogleAuthPopup", `width=${width},height=${height},top=${top},left=${left}`);
-    
-    // উইন্ডোর ভেতরে অফিশিয়াল গুগলের সাইন-ইন ইন্টারফেস স্ক্রিন রাইট করে দেওয়া হলো
-    googleWin.document.write(`
-        <html>
-        <head>
-            <title>Sign in with Google</title>
-            <style>
-                body { font-family: Arial, sans-serif; text-align: center; background: #fff; color: #3c4043; padding: 30px; margin: 0; }
-                .logo { width: 75px; margin-top: 20px; }
-                h1 { font-size: 24px; font-weight: 400; margin-top: 16px; margin-bottom: 8px; color: #202124; }
-                p { font-size: 16px; color: #5f6368; margin-top: 0; }
-                .input-box { width: 100%; max-width: 330px; padding: 14px; margin: 25px 0 15px 0; border: 1px solid #dadce0; border-radius: 4px; font-size: 16px; box-sizing: border-box; }
-                .btn { background: #1a73e8; color: #fff; padding: 10px 24px; border: none; border-radius: 4px; font-size: 14px; font-weight: 500; cursor: pointer; float: right; margin-right: 45px; }
-                .btn:hover { background: #1557b0; }
-                .footer { margin-top: 180px; font-size: 12px; color: #757575; text-align: left; padding-left: 10px; }
-            </style>
-        </head>
-        <body>
-            <img class="logo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_\"An_almanac\"_Logo.svg/1200px-Google_\"An_almanac\"_Logo.svg.png" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Google_2015_logo.svg/375px-Google_2015_logo.svg.png'">
-            <h1>Sign in</h1>
-            <p>to continue to SS-AI Video Automation Engine</p>
-            <input type="email" class="input-box" placeholder="Email or phone" autocomplete="off"><br>
-            <button class="btn" onclick="processLogin()">Next</button>
-            <script>
-                function processLogin() {
-                    let val = document.querySelector('.input-box').value;
-                    if(!val) { alert('Enter an email or phone number'); return; }
-                    document.body.innerHTML = '<div style="margin-top:150px;"><img src="https://i.gifer.com/ZZ5H.gif" style="width:50px;"><h2 style="font-weight:400;color:#202124;">Connecting Channel...</h2><p style="font-size:14px;color:#5f6368;">Syncing Official YouTube API Data with Server</p></div>';
-                    setTimeout(() => { window.close(); }, 2000);
-                }
-            <\/script>
-        </body>
-        </html>
-    `);
-
-    let btn = document.getElementById('yt-connect-btn');
-    btn.innerText = "Connecting Google API Server...";
-    
-    // উইন্ডো ক্লোজ হওয়া মাত্রই ব্যাকঅ্যান্ড ডেটাবেস সিঙ্ক হয়ে যাবে 
-    let checkPopup = setInterval(() => {
-        if (!googleWin || googleWin.closed || googleWin.closed === undefined) {
-            clearInterval(checkPopup);
-            fetch('/customer/auth_youtube', { method: 'POST' })
-            .then(res => res.json()).then(data => {
-                document.getElementById('youtube-section').innerHTML = '<div class="success-badge">✅ YouTube Channel Connected Successfully!</div>';
-            });
+{
+    "admin": {
+        "user_id": "SS_ELITE_ADMIN_2026",
+        "password": "REK_#9824_SNC_@Z7X",
+        "role": "admin"
+    },
+    "customers": {
+        "9339032063": {
+            "name": "Suhan",
+            "password": "demo_password_123",
+            "category": "Bangla Cartoon Video Animation (Special AI Niche)",
+            "gmail": "mrsuhan34@gmail.com",
+            "is_active": true,
+            "is_approved": true,
+            "youtube_linked": true,
+            "device_id": "DEV-main-owner-2026",
+            "bot_active": true
         }
-    }, 1000);
+    }
 }
