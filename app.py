@@ -20,24 +20,21 @@ def load_db():
 def save_db(data):
     with open(DB_FILE, 'w') as f: json.dump(data, f, indent=4)
 
-# 📧 কাস্টমারের ব্যক্তিগত জিমেইলে আনলিমিটেড ডাইনামিক ক্যাটাগরি নোটিফিকেশন
 def send_customer_gmail(receiver_email, customer_name, category):
     try:
         sender_email = "ss.edit.bot.2026@gmail.com"
         sender_password = "xxxx xxxx xxxx xxxx"
-        
-        # কাস্টমার যা সার্চ করবে, এআই সেটা দিয়েই ইনস্ট্যান্ট টপিক স্ক্রিপ্ট জেনারেট করে নেবে
         duration = random.randint(5, 15)
         chosen_time = random.choice(["04:30 PM", "05:45 PM", "06:45 PM", "07:30 PM"])
         chosen_topic = f"Viral Automated {category.capitalize()} Masterclass Video"
 
         subject = f"🎬 [SS-AI Studio] Your Video Is Ready to Publish! - {datetime.now().strftime('%d %b')}"
-        body = f"Hello {customer_name},\n\nYour SS-AI Automated Studio Bot has successfully generated content!\n\n📊 VIDEO DETAILS:\n- Custom Category: {category.upper()}\n- AI Generated Topic: {chosen_topic}\n- Duration: {duration} Mins\n- Upload Time: Today at {chosen_time}\n\nUpdates will be auto-published! (Platform Owner: Sk Suhan 👑)"
+        body = f"Hello {customer_name},\n\nYour SS-AI Automated Studio Bot has successfully generated content!\n\n📊 VIDEO DETAILS:\n- Custom Category: {category.upper()}\n- Topic: {chosen_topic}\n- Duration: {duration} Mins\n- Upload Time: Today at {chosen_time}\n\nUpdates will be auto-published! (Platform Owner: Sk Suhan 👑)"
         
         msg = MIMEText(body, 'plain', 'utf-8')
         msg['From'] = sender_email; msg['To'] = receiver_email; msg['Subject'] = subject
         
-        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server = smtplib.SMTP('smtp.gmail.com', 587, timeout=5)
         server.starttls()
         server.login(sender_email, sender_password)
         server.sendmail(sender_email, receiver_email, msg.as_string())
@@ -64,18 +61,21 @@ def login():
     client_device = data.get('device_id', '')
     db = load_db()
     
+    # 👑 অ্যাডমিন লগইন
     if username == db["admin"]["user_id"] and password == db["admin"]["password"]:
         session.permanent = True; session['username'] = "Owner"; session['role'] = "admin"
         return jsonify({"status": "SUCCESS", "message": "👑 Admin verified! Access granted."})
         
+    # 🎨 কাস্টমার ডাইরেক্ট লগইন (কোনো ওটিপি ছাড়া)
     if username in db["customers"] and db["customers"][username]["password"] == password:
         user_data = db["customers"][username]
-        if not user_data.get('is_active', True): return jsonify({"status": "ERROR", "message": "🛑 Account BLOCKED!"})
+        if not user_data.get('is_active', True): return jsonify({"status": "ERROR", "message": "🛑 LOGIN DENIED: Account is BLOCKED!"})
         if user_data.get('device_id') and user_data.get('device_id') != client_device: return jsonify({"status": "ERROR", "message": "🛑 [DEVICE LOCKED] Bound to another phone!"})
+        
         if not user_data.get('device_id'): db["customers"][username]["device_id"] = client_device; save_db(db)
         session.permanent = True; session['username'] = username; session['role'] = "customer"
         return jsonify({"status": "SUCCESS", "message": "Login Successful!"})
-    return jsonify({"status": "ERROR", "message": "Access Denied!"})
+    return jsonify({"status": "ERROR", "message": "Access Denied: Invalid Credentials!"})
 
 @app.route('/customer/auth_youtube', methods=['POST'])
 def auth_youtube():
@@ -88,18 +88,20 @@ def auth_youtube():
 @app.route('/customer/set_category', methods=['POST'])
 def set_category():
     if 'username' not in session or session['role'] != 'customer': return jsonify({"status": "ERROR"})
-    selected_cat = request.json.get('category', '').strip() # কাস্টমারের টাইপ করা কাস্টম ক্যাটাগরি
+    selected_cat = request.json.get('category', '').strip()
     db = load_db(); username = session['username']
     db["customers"][username]["category"] = selected_cat; user_data = db["customers"][username]; save_db(db)
     if user_data.get('gmail'): send_customer_gmail(user_data['gmail'], user_data['name'], selected_cat)
     return jsonify({"status": "SUCCESS", "message": f"🎯 Category Locked: {selected_cat.upper()} & Mail Alert Sent!"})
 
-@app.route('/admin/reset_device', methods=['POST'])
-def reset_device():
+@app.route('/admin/delete_user', methods=['POST'])
+def delete_user():
     if 'username' not in session or session['role'] != 'admin': return jsonify({"status": "ERROR"})
     target_user = request.json.get('target_user'); db = load_db()
-    if target_user in db["customers"]: db["customers"][target_user]["device_id"] = ""; save_db(db); return jsonify({"status": "SUCCESS", "message": "Device reset successful!"})
-    return jsonify({"status": "ERROR"})
+    if target_user in db["customers"]:
+        db["customers"].pop(target_user); save_db(db)
+        return jsonify({"status": "SUCCESS", "message": f"💥 Customer {target_user} successfully KICKED OUT & DELETED!"})
+    return jsonify({"status": "ERROR", "message": "User not found!"})
 
 @app.route('/admin/toggle_status', methods=['POST'])
 def toggle_status():
@@ -107,7 +109,7 @@ def toggle_status():
     target_user = request.json.get('target_user'); action = request.json.get('action'); db = load_db()
     if target_user in db["customers"]:
         db["customers"][target_user]["is_active"] = (action == 'unblock'); save_db(db)
-        return jsonify({"status": "SUCCESS", "message": f"Status updated to {'ACTIVE' if action=='unblock' else 'BLOCKED'}!"})
+        return jsonify({"status": "SUCCESS", "message": f"Status updated successfully!"})
     return jsonify({"status": "ERROR"})
 
 @app.route('/logout')
