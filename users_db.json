@@ -1,14 +1,18 @@
 {
     "admin": {
-        "password": "suhan_admin_2026",
+        "user_id": "SS_ELITE_ADMIN_2026",
+        "password": "REK_#9824_SNC_@Z7X",
         "role": "admin"
     },
     "customers": {
-        "demo_client": {
-            "password": "client_pass_2026",
+        "9876543210": {
+            "name": "Rohit Kumar",
+            "password": "rohit_pass_2026",
             "category": "",
             "is_active": true,
-            "youtube_linked": false
+            "youtube_linked": false,
+            "gmail": "",
+            "device_id": ""
         }
     }
 }
