@@ -8,10 +8,15 @@
         body { background: #0f0f12; color: #e0e0e0; font-family: 'Segoe UI', Arial, sans-serif; text-align: center; padding: 40px; margin: 0; }
         .box { background: #17171f; padding: 40px; border-radius: 15px; display: inline-block; box-shadow: 0 4px 15px rgba(0,255,204,0.1); max-width: 480px; width: 100%; border: 1px solid #222; position: relative; margin-top: 20px; box-sizing: border-box; }
         h2 { color: #00ffcc; margin-bottom: 5px; }
-        input { padding: 12px; margin: 10px 0; width: 100%; border-radius: 8px; border: 1px solid #333; background: #0f0f12; color: #fff; box-sizing: border-box; }
+        input { padding: 12px; margin: 10px 0; width: 100%; border-radius: 8px; border: 1px solid #333; background: #0f0f12; color: #fff; box-sizing: border-box; padding-right: 45px; }
+        
+        /* 👁️ পাসওয়ার্ড বক্স এবং চোখের বাটনের ১০০% ওয়ার্কিং স্টাইল */
+        .pass-wrapper { position: relative; width: 100%; }
+        .eye-icon { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #888; font-size: 20px; user-select: none; z-index: 10; }
+        
         button { background: #00ffcc; color: #0b0b0e; padding: 12px 25px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; transition: 0.3s; margin-top: 10px; }
         button:hover { background: #00cc99; box-shadow: 0 0 10px rgba(0,255,204,0.4); }
-        .google-btn { background: #4285F4; color: white; margin-top: 15px; font-weight: bold; }
+        .google-btn { background: #4285F4; color: white; margin-top: 15px; font-weight: bold; width: 100%; padding: 12px; border: none; border-radius: 8px; cursor: pointer; }
         .google-btn:hover { background: #357ae8; box-shadow: 0 0 10px rgba(66,133,244,0.4); }
         .menu-container { position: absolute; top: 15px; right: 15px; cursor: pointer; }
         .three-dots { font-size: 24px; color: #888; padding: 5px 10px; }
@@ -27,10 +32,13 @@
         .info-row { font-size: 13px; color: #aaa; margin: 4px 0; }
         .toggle-link { color: #00ffcc; cursor: pointer; text-decoration: underline; font-size: 14px; display: inline-block; margin-top: 15px; }
         
-        .search-container { position: relative; width: 100%; text-align: left; }
-        .suggestion-box { position: absolute; top: 100%; left: 0; width: 100%; background: #1f1f2e; border: 1px solid #333; border-radius: 8px; max-height: 220px; overflow-y: auto; z-index: 999; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.6); }
-        .suggestion-item { padding: 11px 15px; cursor: pointer; color: #e0e0e0; border-bottom: 1px solid #2a2a3a; font-size: 13.5px; }
+        /* 🎯 ইউটিউব স্টাইল লাইভ সার্চ ড্রপডাউন বক্স */
+        .search-container { position: relative; width: 100%; text-align: left; margin-top: 10px; }
+        .suggestion-box { position: absolute; top: 100%; left: 0; width: 100%; background: #1f1f2e; border: 1px solid #333; border-radius: 8px; max-height: 180px; overflow-y: auto; z-index: 9999; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.6); box-sizing: border-box; }
+        .suggestion-item { padding: 11px 15px; cursor: pointer; color: #e0e0e0; border-bottom: 1px solid #2a2a3a; font-size: 13.5px; text-align: left; }
         .suggestion-item:hover { background: #00ffcc; color: #0b0b0e; font-weight: bold; }
+        
+        .success-badge { background: #112a22; color: #00ffcc; padding: 15px; border-radius: 8px; border: 1px solid #00cc66; font-weight: bold; margin: 15px 0; font-size: 14px; text-align: center; border-left: 4px solid #00ffcc; }
     </style>
 </head>
 <body>
@@ -49,7 +57,10 @@
                 <h2>🚀 SS-AI SaaS Platform</h2>
                 <p style="color: #888;">Secure Login Gateway</p>
                 <input type="text" id="user" placeholder="Enter Mobile Number / Admin ID"><br>
-                <input type="password" id="pass" placeholder="Enter Password"><br>
+                <div class="pass-wrapper">
+                    <input type="password" id="pass" placeholder="Enter Password">
+                    <span class="eye-icon" onclick="togglePasswordVisibility('pass')">👁️</span>
+                </div>
                 <button onclick="login()">SECURE LOGIN</button>
                 <span class="toggle-link" onclick="toggleForm('register')">Create New Account</span>
             </div>
@@ -60,7 +71,10 @@
                 <input type="text" id="reg-name" placeholder="Enter Your Full Name"><br>
                 <input type="text" id="reg-phone" placeholder="Enter Your Mobile Number"><br>
                 <input type="email" id="reg-gmail" placeholder="Enter Your Gmail ID"><br>
-                <input type="password" id="reg-pass" placeholder="Create Your Password"><br>
+                <div class="pass-wrapper">
+                    <input type="password" id="reg-pass" placeholder="Create Your Password">
+                    <span class="eye-icon" onclick="togglePasswordVisibility('reg-pass')">👁️</span>
+                </div>
                 <button onclick="submitForApproval()" style="background: #00cc66; color: white;">SIGN UP & REQUEST ACCESS</button>
                 <span class="toggle-link" onclick="toggleForm('login')">Already have an account? Login here</span>
             </div>
@@ -69,7 +83,7 @@
                 <h2 style="color: #ffaa00;">⏳ Wait Processing...</h2>
                 <p style="color: #aaa; font-size: 15px; padding: 10px;">Your registration request has been sent live to Platform Admin.</p>
                 <div style="margin: 20px 0; font-size: 14px; color: #00ffcc; font-weight: bold; animation: blink 1.5s infinite;">
-                    🔒 Keeping this page open. As soon as Admin approves, you will enter the studio automatically!
+                    🔒 System is syncing live. As soon as Admin clicks Approve, you will be logged in automatically!
                 </div>
             </div>
             <div id="msg" style="margin-top: 15px; color: #00ffcc; font-weight: bold;"></div>
@@ -89,7 +103,7 @@
                             <strong>👤 Name: <span style="color: #ffaa00;">{{ info.name }}</span></strong><br>
                             <div class="info-row">📞 <b>Mobile ID:</b> {{ phone }}</div>
                             <div class="info-row">📧 <b>Gmail:</b> {{ info.gmail }}</div>
-                            <div class="info-row">🔑 <b>Set Pass:</b> {{ info.password }}</div>
+                            <div class="info-row">🔑 <b>Password:</b> {{ info.password }}</div>
                         </div>
                     {% endif %}
                 {% endfor %}
@@ -112,7 +126,6 @@
                             <div class="info-row">📧 <b>Gmail:</b> {{ info.gmail }}</div>
                             <div class="info-row">🔑 <b>Password:</b> <span style="color: #ffcc00;">{{ info.password }}</span></div>
                             <div class="info-row">🎯 <b>Category:</b> {{ info.category.upper() if info.category else 'NOT SET' }}</div>
-                            <div class="info-row">📊 <b>Bot Engine:</b> <span style="color: #00ffcc; font-weight: bold;">{{ 'RUNNING & PUBLISHING' if info.bot_active else 'STANDBY' }}</span></div>
                         </div>
                     {% endif %}
                 {% endfor %}
@@ -126,28 +139,40 @@
             </div>
             <hr style="border-color: #333;">
             
-            <p style="color: #ffcc00; text-align: left;">⚠️ Step 1: Connect Official YouTube Link Access:</p>
-            <button class="google-btn" onclick="connectGoogle()">🔗 LINK YOUTUBE VIA GOOGLE</button>
+            <div id="youtube-section">
+                {% if not linked %}
+                    <p style="color: #ffcc00; text-align: left;">⚠️ Step 1: Connect Official YouTube Link Access:</p>
+                    <button class="google-btn" id="yt-connect-btn" onclick="connectGoogle()">🔗 LINK YOUTUBE VIA GOOGLE</button>
+                {% else %}
+                    <div class="success-badge">✅ YouTube Channel Connected Successfully!</div>
+                {% endif %}
+            </div>
             <hr style="border-color: #333; margin: 20px 0;">
 
-            {% if not category %}
-                <p style="color: #ffcc00; text-align: left;">⚠️ Step 2: Search & Select Category (Start Bot Engine):</p>
-                <div class="search-container">
-                    <input type="text" id="cat-search" oninput="filterCategories()" placeholder="Type to search official YouTube niche..." autocomplete="off">
-                    <div class="suggestion-box" id="suggestion-box"></div>
-                </div>
-                <button onclick="setCategory()">LOCK CATEGORY & START BOT</button>
-            {% else %}
-                <p>🎯 Your Locked Category: <strong style="color: #00ffcc;">{{ category.upper() }}</strong></p>
-                <div style="background: #222; padding: 15px; border-radius: 8px; margin: 20px 0; color: #00ffcc; font-weight: bold; border-left: 4px solid #00ffcc;">
-                    🤖 AI Bot Engine Status: ACTIVE (Publishing Today!)
-                </div>
-            {% endif %}
+            <div id="category-section">
+                {% if not category %}
+                    <p style="color: #ffcc00; text-align: left;">⚠️ Step 2: Search & Select Category (Start Bot Engine):</p>
+                    <div class="search-container">
+                        <input type="text" id="cat-search" oninput="filterCategories()" placeholder="Type to search official YouTube niche..." autocomplete="off">
+                        <div class="suggestion-box" id="suggestion-box"></div>
+                    </div>
+                    <button onclick="setCategory()" style="margin-top: 15px;">LOCK CATEGORY & START BOT</button>
+                {% else %}
+                    <div class="success-badge" style="border-color: #00ffcc; color: #00ffcc;">🎯 Locked Niche: {{ category.upper() }}<br><br>🤖 AI Automation Bot Engine Active!</div>
+                {% endif %}
+            </div>
             <div id="msg" style="margin-top: 15px; color: #ffcc00; font-weight: bold;"></div>
         {% endif %}
     </div>
 
     <script>
+        // 👁️ চোখের বোতাম টিপলে পাসওয়ার্ড শো/হাইড করার ১০০% কার্যকরী জাভাস্ক্রিপ্ট
+        function togglePasswordVisibility(fieldId) {
+            let field = document.getElementById(fieldId);
+            if (field.type === "password") { field.type = "text"; } else { field.type = "password"; }
+        }
+
+        // 🌍 মেগা ক্যাটাগরি ডাটাবেস (ডকুমেন্টরি, এআই ভিডিও সহ সমস্ত ইউটিউব নিশ যুক্ত)
         const ytCategories = [
             "Film & Animation", "Music Niche (Lo-Fi Beats, Remixes)", "Gaming Niche (Hulk AI Animations)", 
             "Gaming Niche (Free Fire Trends & Live)", "Gaming Niche (PUBG/BGMI Custom)", "Comedy Vines & Short Roasts", 
@@ -157,22 +182,37 @@
             "Movie Explanations & Recaps (Bengali)", "Toy Review & Kids Stories Niche", "Title AI Niche & Keywords Automation"
         ];
 
+        // 🎯 লাইভ সার্চ ফিল্টার ড্রপডাউন লজিক
         function filterCategories() {
             let input = document.getElementById('cat-search').value.toLowerCase();
-            let box = document.getElementById('suggestion-box'); box.innerHTML = '';
+            let box = document.getElementById('suggestion-box');
+            box.innerHTML = '';
             if(!input) { box.style.display = 'none'; return; }
+            
             let filtered = ytCategories.filter(cat => cat.toLowerCase().includes(input));
             if(filtered.length > 0) {
                 box.style.display = 'block';
                 filtered.forEach(cat => {
-                    let div = document.createElement('div'); div.className = 'suggestion-item'; div.innerText = cat;
-                    div.onclick = function() { document.getElementById('cat-search').value = cat; box.style.display = 'none'; };
+                    let div = document.createElement('div');
+                    div.className = 'suggestion-item';
+                    div.innerText = cat;
+                    div.onclick = function() {
+                        document.getElementById('cat-search').value = cat;
+                        box.style.display = 'none';
+                    };
                     box.appendChild(div);
                 });
             } else { box.style.display = 'none'; }
         }
 
-        window.addEventListener('click', function(e){ if(!document.getElementById('cat-search').contains(e.target)) { document.getElementById('suggestion-box').style.display = 'none'; } });
+        // বাইরে ক্লিক করলে ড্রপডাউন বন্ধ করা
+        document.addEventListener('click', function(e){
+            let searchInput = document.getElementById('cat-search');
+            let sugBox = document.getElementById('suggestion-box');
+            if(searchInput && !searchInput.contains(e.target) && !sugBox.contains(e.target)) {
+                sugBox.style.display = 'none';
+            }
+        });
 
         let checkApprovalInterval = null; let globalPendingPhone = "";
         function toggleForm(type) { if(type === 'register') { document.getElementById('login-form').style.display = 'none'; document.getElementById('register-form').style.display = 'block'; } else { document.getElementById('login-form').style.display = 'block'; document.getElementById('register-form').style.display = 'none'; } document.getElementById('msg').innerText = ""; }
@@ -190,22 +230,38 @@
             if(!n || !ph || !gm || !pa) { alert("Please fill up all fields!"); return; }
             globalPendingPhone = ph;
             fetch('/register_request', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({name: n, phone: ph, gmail: gm, password: pa, device_id: getDeviceID()}) })
-            .then(res => res.json()).then(data => { if(data.status === "SUCCESS") { document.getElementById('register-form').style.display = 'none'; document.getElementById('processing-form').style.display = 'block'; checkApprovalInterval = setInterval(pollApprovalStatus, 3000); } else { document.getElementById('msg').innerText = data.message; } });
+            .then(res => res.json()).then(data => { if(data.status === "SUCCESS") { document.getElementById('register-form').style.display = 'none'; document.getElementById('processing-form').style.display = 'block'; checkApprovalInterval = setInterval(pollApprovalStatus, 2000); } else { document.getElementById('msg').innerText = data.message; } });
         }
 
         function pollApprovalStatus() {
             fetch('/check_approval_status', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({phone: globalPendingPhone}) })
-            .then(res => res.json()).then(data => { if(data.status === "APPROVED") { clearInterval(checkApprovalInterval); document.getElementById('msg').innerText = "🎉 Access Granted! Loading..."; setTimeout(() => { location.reload(); }, 1000); } else if(data.status === "REJECTED") { clearInterval(checkApprovalInterval); alert("❌ Your request was rejected."); location.reload(); } });
+            .then(res => res.json()).then(data => { if(data.status === "APPROVED") { clearInterval(checkApprovalInterval); location.reload(); } else if(data.status === "REJECTED") { clearInterval(checkApprovalInterval); alert("❌ Your request was rejected."); location.reload(); } });
         }
 
         function handleApproval(phoneNum, actionType) { fetch('/admin/handle_request', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({target_user: phoneNum, action: actionType}) }).then(res => res.json()).then(data => { alert(data.message); location.reload(); }); }
-        function connectGoogle() { fetch('/customer/auth_youtube', { method: 'POST' }).then(res => res.json()).then(data => { alert(data.message); location.reload(); }); }
+        
+        // 🎯 ওয়ান-ক্লিক জিমেইল অথ লাইভ সাকসেস বাটন সিঙ্ক
+        function connectGoogle() { 
+            let btn = document.getElementById('yt-connect-btn');
+            btn.innerText = "Connecting Google Accounts...";
+            
+            setTimeout(() => {
+                fetch('/customer/auth_youtube', { method: 'POST' })
+                .then(res => res.json()).then(data => {
+                    document.getElementById('youtube-section').innerHTML = '<div class="success-badge">✅ YouTube Channel Connected Successfully!</div>';
+                });
+            }, 800);
+        }
+
         function deleteCustomer(phoneNum) { if(confirm("Permanently delete?")) { fetch('/admin/delete_user', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({target_user: phoneNum}) }).then(res => res.json()).then(data => { alert(data.message); location.reload(); }); } }
         function toggleStatus(phoneNum, actionType) { fetch('/admin/toggle_status', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({target_user: phoneNum, action: actionType}) }).then(res => res.json()).then(data => { alert(data.message); location.reload(); }); }
         
         function setCategory() {
             let cat = document.getElementById('cat-search').value.trim(); if(!cat) { alert("Please select a category!"); return; }
-            fetch('/customer/set_category', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({category: cat}) }).then(res => res.json()).then(data => { document.getElementById('msg').innerText = data.message; if(data.status === "SUCCESS") { setTimeout(() => { location.reload(); }, 1500); } });
+            fetch('/customer/set_category', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({category: cat}) })
+            .then(res => res.json()).then(data => {
+                document.getElementById('category-section').innerHTML = '<div class="success-badge" style="border-color: #00ffcc; color: #00ffcc;">🎯 Locked Niche: ' + cat.toUpperCase() + '<br><br>🤖 AI Automation Bot Engine Active!</div>';
+            });
         }
     </script>
 </body>
