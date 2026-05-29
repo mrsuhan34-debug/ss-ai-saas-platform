@@ -6,10 +6,10 @@
     <title>SS-AI Enterprise SaaS Platform</title>
     <style>
         body { background: #0f0f12; color: #e0e0e0; font-family: 'Segoe UI', Arial, sans-serif; text-align: center; padding: 40px; margin: 0; }
-        .box { background: #17171f; padding: 40px; border-radius: 15px; display: inline-block; box-shadow: 0 4px 15px rgba(0,255,204,0.1); max-width: 480px; width: 100%; border: 1px solid #222; position: relative; margin-top: 20px; }
+        .box { background: #17171f; padding: 40px; border-radius: 15px; display: inline-block; box-shadow: 0 4px 15px rgba(0,255,204,0.1); max-width: 480px; width: 100%; border: 1px solid #222; position: relative; margin-top: 20px; box-sizing: border-box; }
         h2 { color: #00ffcc; margin-bottom: 5px; }
-        input, select { padding: 12px; margin: 10px 0; width: 90%; border-radius: 8px; border: 1px solid #333; background: #0f0f12; color: #fff; box-sizing: border-box; }
-        button { background: #00ffcc; color: #0b0b0e; padding: 12px 25px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; width: 95%; transition: 0.3s; margin-top: 10px; }
+        input, select { padding: 12px; margin: 10px 0; width: 100%; border-radius: 8px; border: 1px solid #333; background: #0f0f12; color: #fff; box-sizing: border-box; }
+        button { background: #00ffcc; color: #0b0b0e; padding: 12px 25px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; transition: 0.3s; margin-top: 10px; }
         button:hover { background: #00cc99; box-shadow: 0 0 10px rgba(0,255,204,0.4); }
         .google-btn { background: #4285F4; color: white; margin-top: 15px; }
         .google-btn:hover { background: #357ae8; box-shadow: 0 0 10px rgba(66,133,244,0.4); }
@@ -41,7 +41,7 @@
             <div id="login-form">
                 <h2>🚀 SS-AI SaaS Platform</h2>
                 <p style="color: #888;">Secure Login Gateway</p>
-                <input type="text" id="user" placeholder="Enter Mobile Number / Admin User ID"><br>
+                <input type="text" id="user" placeholder="Enter Mobile Number / Admin ID"><br>
                 <input type="password" id="pass" placeholder="Enter Password"><br>
                 <button onclick="login()">SECURE LOGIN</button>
                 <span class="toggle-link" onclick="toggleForm('register')">New Customer? Create Account (Sign Up)</span>
@@ -52,9 +52,18 @@
                 <p style="color: #888;">Register as a New Customer</p>
                 <input type="text" id="reg-name" placeholder="Enter Your Full Name"><br>
                 <input type="text" id="reg-phone" placeholder="Enter Your Mobile Number"><br>
-                <input type="password" id="reg-pass" placeholder="Create Secret Password"><br>
-                <button onclick="register()" style="background: #00cc66; color: white;">REGISTER ACCOUNT</button>
+                <input type="email" id="reg-gmail" placeholder="Enter Your Active Gmail ID"><br>
+                <input type="password" id="reg-pass" placeholder="Create Your Password"><br>
+                <button onclick="sendOtp()" style="background: #00cc66; color: white;">SEND VERIFICATION CODE</button>
                 <span class="toggle-link" onclick="toggleForm('login')">Already have an account? Login here</span>
+            </div>
+
+            <div id="otp-form" style="display: none;">
+                <h2>✉️ Verify Your Gmail</h2>
+                <p style="color: #888;">We have sent a 4-digit OTP code to your Gmail.</p>
+                <input type="text" id="otp-code" placeholder="Enter 4-Digit OTP Code" maxlength="4" style="text-align: center; font-size: 20px; letter-spacing: 5px;"><br>
+                <button onclick="verifyOtp()" style="background: #00ffcc; color: black;">VERIFY & ENTER STUDIO</button>
+                <span class="toggle-link" onclick="backToRegister()">⬅️ Back to Edit Details</span>
             </div>
             
             <div id="msg" style="margin-top: 15px; color: #00ffcc; font-weight: bold;"></div>
@@ -76,7 +85,7 @@
 
                         <strong>👤 Name: <span style="color: #00ffcc;">{{ info.name }}</span></strong> <br>
                         <div class="info-row">📞 <b>Mobile ID:</b> {{ phone }}</div>
-                        <div class="info-row">📧 <b>Linked Gmail:</b> <span style="color: #00ffcc;">{{ info.gmail if info.gmail else 'Not Connected' }}</span></div>
+                        <div class="info-row">📧 <b>Customer Gmail:</b> <span style="color: #00ffcc;">{{ info.gmail }}</span></div>
                         <div class="info-row">🔑 <b>Password:</b> <span style="color: #ffcc00;">{{ info.password }}</span></div>
                         <div class="info-row">🎯 <b>Category:</b> {{ info.category.upper() if info.category else 'NOT SET' }}</div>
                         <div class="info-row">📊 <b>Status:</b> <span style="font-weight: bold; color: {{ '#00ffcc' if info.is_active else '#ff4444' }}">{{ 'ACTIVE' if info.is_active else 'BLOCKED' }}</span></div>
@@ -90,21 +99,40 @@
             <div style="text-align: left; background: #222; padding: 12px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #00ffcc;">
                 <p style="margin: 0; font-size: 16px;">👤 Name: <b>{{ name }}</b></p>
                 <p style="margin: 5px 0 0 0; font-size: 13px; color: #aaa;">📞 Mobile ID: <b>{{ username }}</b></p>
+                <p style="margin: 5px 0 0 0; font-size: 13px; color: #aaa;">📧 Verified Email: <b>{{ gmail_id }}</b></p>
             </div>
             <hr style="border-color: #333;">
             
             {% if not linked %}
-                <p style="color: #ffcc00;">⚠️ Step 1: Connect Gmail & Grant YouTube Access:</p>
-                <input type="email" id="cust-gmail" placeholder="Enter Your Active Gmail Account" style="width: 90%;"><br>
+                <p style="color: #ffcc00;">⚠️ Step 1: Connect Official YouTube Link Access:</p>
                 <button class="google-btn" onclick="connectGoogle()">🔗 LINK YOUTUBE VIA GOOGLE</button>
                 <hr style="border-color: #333; margin: 20px 0;">
             {% else %}
-                <p style="color: #00ffcc;">✅ YouTube & Gmail Connection Active! ({{ gmail_id }})</p>
+                <p style="color: #00ffcc;">✅ YouTube & Gmail Connection Active!</p>
             {% endif %}
 
             {% if not category %}
-                <p style="color: #ffcc00;">⚠️ Step 2: Search & Lock Any Niche Category:</p>
-                <input type="text" id="cat-search" placeholder="Type Category (e.g., Vlogs, Gaming, ASMR...)" style="width: 90%;"><br>
+                <p style="color: #ffcc00;">⚠️ Step 2: Search & Select Category (Locked Forever):</p>
+                <input type="text" id="cat-search" list="youtube-categories" placeholder="Type to search e.g. Hulk, Gaming, Vlogs...">
+                <datalist id="youtube-categories">
+                    <option value="Hulk AI Video Studio Generation">
+                    <option value="Cartoon Niche (Bengali Fairy Tales & Stories)">
+                    <option value="3D Animation & Kids Toy Stories">
+                    <option value="Object AI Automation & Motion Tracking">
+                    <option value="Title AI Niche & Keywords Selector">
+                    <option value="Gaming Niche (Free Fire Live & Status)">
+                    <option value="Gaming Niche (PUBG / BGMI Highlights)">
+                    <option value="GTA 5 Funny Moments & Mods">
+                    <option value="Tech Niche (AI Gadgets, Mobile Unboxing)">
+                    <option value="Comedy Vines & Short Roast Videos">
+                    <option value="Daily Life Mini Vlogs & Travel Niche">
+                    <option value="Movie Explanations (Bengali / Hindi Recaps)">
+                    <option value="Facts Niche (1 Minute Intresting Facts Shorts)">
+                    <option value="Motivation Niche (Life Changing Quotes & Podcasting)">
+                    <option value="ASMR Cooking & Deep Relaxing Sounds">
+                    <option value="Lo-Fi Music & Cinematic Status Backgrounds">
+                    <option value="Educational GK & Current Affairs Quiz">
+                </datalist>
                 <button onclick="setCategory()">LOCK CATEGORY & START BOT</button>
             {% else %}
                 <p>🎯 Your Locked Category: <strong style="color: #00ffcc;">{{ category.upper() }}</strong></p>
@@ -117,14 +145,24 @@
     </div>
 
     <script>
+        let tempUserData = {};
+
         function toggleForm(type) {
             if(type === 'register') {
                 document.getElementById('login-form').style.display = 'none';
                 document.getElementById('register-form').style.display = 'block';
+                document.getElementById('otp-form').style.display = 'none';
             } else {
                 document.getElementById('login-form').style.display = 'block';
                 document.getElementById('register-form').style.display = 'none';
+                document.getElementById('otp-form').style.display = 'none';
             }
+            document.getElementById('msg').innerText = "";
+        }
+
+        function backToRegister() {
+            document.getElementById('register-form').style.display = 'block';
+            document.getElementById('otp-form').style.display = 'none';
             document.getElementById('msg').innerText = "";
         }
 
@@ -142,33 +180,50 @@
             .then(res => res.json()).then(data => { document.getElementById('msg').innerText = data.message; if(data.status === "SUCCESS") { setTimeout(() => { location.reload(); }, 1000); } });
         }
 
-        // 📝 কাস্টমার নিজে রেজিস্ট্রেশন করার জাভাস্ক্রিপ্ট ফাংশন
-        function register() {
+        function sendOtp() {
             let n = document.getElementById('reg-name').value.trim();
             let ph = document.getElementById('reg-phone').value.trim();
+            let gm = document.getElementById('reg-gmail').value.trim();
             let pa = document.getElementById('reg-pass').value.trim();
-            if(!n || !ph || !pa) { alert("Please fill all fields!"); return; }
             
-            fetch('/register', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({name: n, phone: ph, password: pa}) })
-            .then(res => res.json()).then(data => { 
-                document.getElementById('msg').innerText = data.message; 
-                if(data.status === "SUCCESS") { setTimeout(() => { toggleForm('login'); }, 1500); } 
+            if(!n || !ph || !gm || !pa) { alert("Please fill up all fields!"); return; }
+            if(!gm.includes('@')) { alert("Please enter a valid Gmail ID!"); return; }
+            
+            document.getElementById('msg').innerText = "Sending Verification OTP Code to your Gmail...";
+            tempUserData = { name: n, phone: ph, gmail: gm, password: pa, device_id: getDeviceID() };
+            
+            fetch('/request_otp', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({gmail: gm, phone: ph}) })
+            .then(res => res.json()).then(data => {
+                document.getElementById('msg').innerText = data.message;
+                if(data.status === "SUCCESS") {
+                    document.getElementById('register-form').style.display = 'none';
+                    document.getElementById('otp-form').style.display = 'block';
+                }
             });
         }
 
-        function connectGoogle() {
-            let g = document.getElementById('cust-gmail').value; if(!g || !g.includes('@')) { alert("Enter valid Gmail!"); return; }
-            fetch('/customer/auth_youtube', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({gmail: g}) }).then(res => res.json()).then(data => { alert(data.message); location.reload(); });
+        function verifyOtp() {
+            let code = document.getElementById('otp-code').value.trim();
+            if(code.length !== 4) { alert("Enter 4-digit code!"); return; }
+            document.getElementById('msg').innerText = "Verifying code...";
+            
+            fetch('/verify_otp', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({otp: code, user_data: tempUserData}) })
+            .then(res => res.json()).then(data => {
+                document.getElementById('msg').innerText = data.message;
+                if(data.status === "SUCCESS") { setTimeout(() => { location.reload(); }, 1000); }
+            });
         }
+
+        function connectGoogle() { fetch('/customer/auth_youtube', { method: 'POST' }).then(res => res.json()).then(data => { alert(data.message); location.reload(); }); }
         function deleteCustomer(phoneNum) {
-            if(confirm("Are you sure you want to permanently DELETE this customer?")) {
+            if(confirm("Are you sure?")) {
                 fetch('/admin/delete_user', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({target_user: phoneNum}) })
                 .then(res => res.json()).then(data => { alert(data.message); location.reload(); });
             }
         }
         function toggleStatus(phoneNum, actionType) { fetch('/admin/toggle_status', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({target_user: phoneNum, action: actionType}) }).then(res => res.json()).then(data => { alert(data.message); location.reload(); }); }
         function setCategory() {
-            let cat = document.getElementById('cat-search').value.trim(); if(!cat) { alert("Please type a category!"); return; }
+            let cat = document.getElementById('cat-search').value.trim(); if(!cat) { alert("Please select a category!"); return; }
             fetch('/customer/set_category', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({category: cat}) }).then(res => res.json()).then(data => { document.getElementById('msg').innerText = data.message; if(data.status === "SUCCESS") { setTimeout(() => { location.reload(); }, 1500); } });
         }
     </script>
