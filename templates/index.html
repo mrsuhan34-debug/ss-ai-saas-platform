@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SS-AI SaaS Platform</title>
+    <style>
+        body { background: #0f0f12; color: #e0e0e0; font-family: 'Segoe UI', Arial, sans-serif; text-align: center; padding: 40px; }
+        .box { background: #17171f; padding: 40px; border-radius: 15px; display: inline-block; box-shadow: 0 4px 15px rgba(0,255,204,0.1); max-width: 450px; width: 100%; border: 1px solid #222; }
+        h2 { color: #00ffcc; margin-bottom: 5px; }
+        input, select { padding: 12px; margin: 10px 0; width: 90%; border-radius: 8px; border: 1px solid #333; background: #0f0f12; color: #fff; }
+        button { background: #00ffcc; color: #0b0b0e; padding: 12px 25px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; width: 95%; transition: 0.3s; margin-top: 10px; }
+        button:hover { background: #00cc99; box-shadow: 0 0 10px rgba(0,255,204,0.4); }
+        .logout-btn { background: #ff4444; color: white; margin-top: 20px; }
+        .logout-btn:hover { background: #cc3333; }
+        .client-card { background: #222; padding: 10px; margin: 10px 0; border-radius: 8px; text-align: left; display: flex; justify-content: space-between; align-items: center; }
+        .kick-btn { background: #ff4444; color: white; padding: 5px 10px; width: auto; font-size: 12px; margin: 0; }
+    </style>
+</head>
+<body>
+
+    <div class="box">
+        {% if role == 'guest' %}
+            <h2>🚀 SS-AI SaaS প্ল্যাটফর্ম</h2>
+            <p style="color: #888;">অ্যাডমিন ও কাস্টমার পোর্টাল</p>
+            <input type="text" id="user" placeholder="Username"><br>
+            <input type="password" id="pass" placeholder="Password"><br>
+            <button onclick="login()">LOGIN SYSTEM</button>
+            <div id="msg" style="margin-top: 15px; color: #00ffcc; font-weight: bold;"></div>
+
+        {% elif role == 'admin' %}
+            <h2>👑 অ্যাডমিন কন্ট্রোল রুম</h2>
+            <p style="color: #00ffcc;">স্বাগতম সুহান ভাই</p>
+            <hr style="border-color: #333;">
+            <h4 style="text-align: left; margin-bottom: 5px;">চলতি কাস্টমার লিস্ট:</h4>
+            <div id="client-list">
+                {% for name, info in customers.items() %}
+                    <div class="client-card">
+                        <div>
+                            <strong>{{ name }}</strong> <br>
+                            <span style="font-size: 12px; color: #888;">ক্যাটাগরি: {{ info.category if info.category else 'নট সেট' }} | স্ট্যাটাস: {{ 'Active' if info.is_active else 'Blocked' }}</span>
+                        </div>
+                        {% if info.is_active %}
+                            <button class="kick-btn" onclick="kick('{{ name }}')">KICK OUT</button>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+            <button class="logout-btn" onclick="location.href='/logout'">LOG OUT</button>
+
+        {% elif role == 'customer' %}
+            <h2>🎨 কাস্টমার এআই স্টুডিও</h2>
+            <p>হ্যালো, <strong style="color: #00ffcc;">{{ username }}</strong></p>
+            <hr style="border-color: #333;">
+            
+            {% if not category %}
+                <p style="color: #ffcc00;">⚠️ ওয়ান-টাইম ক্যাটাগরি সিলেক্ট করুন (এটি পরে বদলানো যাবে না):</p>
+                <select id="cat-select">
+                    <option value="gaming">Gaming (ফ্রি ফায়ার, পাবজি ট্রেন্ড)</option>
+                    <option value="cooking">Cooking (রেসিপি ও ফুড মেকিং)</option>
+                    <option value="tech">Tech (গ্যাজেট ও এআই টেক রিভিউ)</option>
+                    <option value="cartoon">Cartoon (বাংলা কার্টুন গল্প)</option>
+                    <option value="motivation">Motivation (অনুপ্রেরণামূলক উক্তি)</option>
+                </select>
+                <button onclick="setCategory()">LOCK CATEGORY</button>
+            {% else %}
+                <p>🎯 আপনার লক করা ক্যাটাগরি: <strong style="color: #00ffcc;">{{ category.upper() }}</strong></p>
+                <div style="background: #222; padding: 15px; border-radius: 8px; margin: 20px 0; color: #00ffcc; font-weight: bold;">
+                    🤖 এআই বট ব্যাকগ্রাউন্ডে আপনার ইউটিউব চ্যানেলের সাথে কানেক্টেড আছে এবং অটো-কাজ করছে।
+                </div>
+            {% endif %}
+            
+            <button class="logout-btn" onclick="location.href='/logout'">LOG OUT</button>
+            <div id="msg" style="margin-top: 15px; color: #ffcc00; font-weight: bold;"></div>
+        {% endif %}
+    </div>
+
+    <script>
+        function login() {
+            let u = document.getElementById('user').value;
+            let p = document.getElementById('pass').value;
+            fetch('/login', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({username: u, password: p})
+            })
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('msg').innerText = data.message;
+                if(data.status === "SUCCESS") { setTimeout(() => { location.reload(); }, 1000); }
+            });
+        }
+
+        function kick(username) {
+            fetch('/admin/kick', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({target_user: username})
+            })
+            .then(res => res.json())
+            .then(data => { alert(data.message); location.reload(); });
+        }
+
+        function setCategory() {
+            let cat = document.getElementById('cat-select').value;
+            fetch('/customer/set_category', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({category: cat})
+            })
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('msg').innerText = data.message;
+                if(data.status === "SUCCESS") { setTimeout(() => { location.reload(); }, 1500); }
+            });
+        }
+    </script>
+</body>
+</html>
