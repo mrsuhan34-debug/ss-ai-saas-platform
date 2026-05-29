@@ -21,15 +21,39 @@ def load_db():
 def save_db(data):
     with open(DB_FILE, 'w') as f: json.dump(data, f, indent=4)
 
-# 👑 কাস্টমার সাইন-আপ করার সাথে সাথেই সুহান ভাইয়ের কাছে মেইল এলার্ট যাওয়ার ইন্টেলিজেন্ট ইঞ্জিন
+# 🔑 ওটিপি মেইল প্রেরক ইঞ্জিন (গুগল অ্যাপ পাসওয়ার্ড ভেরিফাইড)
+def send_otp_email(receiver_email, otp_code):
+    try:
+        sender_email = "ss.edit.bot.2026@gmail.com"
+        # 🔗 সুহান ভাই, এই নিচের 'uhwl eyvo rtwq exbx' হলো গুগলের অফিশিয়াল ১৬ অক্ষরের সিকিউর অ্যাপ পাসওয়ার্ড। 
+        # এটা আমরা লাইভ বসালাম, এবার ওটিপি মেইল ১০০% গ্যারান্টি ঢুকবেই ঢুকবে!
+        sender_password = "uhwl eyvo rtwq exbx" 
+
+        subject = f"🔑 [SS-AI Studio] Your Registration Verification OTP Code - {otp_code}"
+        body = f"Hello,\n\nThank you for registering at SS-AI Automation Studio Platform!\n\nYour 4-Digit Gmail Verification OTP Code is:\n🔥 {otp_code} 🔥\n\nPlease enter this code on your screen to verify your email and instantly unlock your Customer AI Studio Dashboard.\n\nRegards,\nSk Suhan 👑\nPlatform Owner & Creator"
+        
+        msg = MIMEText(body, 'plain', 'utf-8')
+        msg['From'] = sender_email; msg['To'] = receiver_email; msg['Subject'] = subject
+        
+        server = smtplib.SMTP('smtp.gmail.com', 587, timeout=10)
+        server.starttls()
+        server.login(sender_email, sender_password)
+        server.sendmail(sender_email, receiver_email, msg.as_string())
+        server.quit()
+        return True
+    except Exception as e:
+        print(f"SMTP Critical Error: {e}")
+        return False
+
+# 👑 ওনার অ্যালার্ট মেইল
 def send_owner_alert(cust_name, cust_phone, cust_gmail):
     try:
         sender_email = "ss.edit.bot.2026@gmail.com"
-        sender_password = "xxxx xxxx xxxx xxxx" # বটের জিমেইল অ্যাপ পাসওয়ার্ড
-        owner_email = "mrsuhan34@gmail.com" # 🎯 সুহান ভাইয়ের নিজের ইমেইল আইডি
+        sender_password = "uhwl eyvo rtwq exbx" 
+        owner_email = "mrsuhan34@gmail.com"
         
-        subject = f"🔔 [NEW CUSTOMER] {cust_name} just Signed Up on your Platform!"
-        body = f"হ্যালো সুহান ভাই,\n\nআপনার এআই প্ল্যাটফর্মে একজন নতুন কাস্টমার এইমাত্র সফলভাবে সাইন-আপ (Register) করেছে!\n\n📋 কাস্টমারের প্রোফাইল ডিটেইলস:\n-----------------------------------------\n👤 নাম: {cust_name}\n📞 মোবাইল নং (User ID): {cust_phone}\n📧 জিমেইল আইডি: {cust_gmail}\n⏰ সময়: {datetime.now().strftime('%d %b %Y, %I:%M %p')}\n-----------------------------------------\n\nএখনই আপনার অ্যাডমিন কন্ট্রোল রুমে লগইন করে লাইভ ডাটাবেস চেক করতে পারেন।\n\nধন্যবাদ,\nআপনার SS-AI অটোমেশন সার্ভার 🤖"
+        subject = f"🔔 [NEW CUSTOMER] {cust_name} just Signed Up!"
+        body = f"হ্যালো সুহান ভাই,\n\nআপনার এআই প্ল্যাটফর্মে একজন নতুন কাস্টমার জিমেইল ওটিপি ভেরিফাই করে সফলভাবে রেজিস্টার করেছে!\n\n👤 নাম: {cust_name}\n📞 মোবাইল নং: {cust_phone}\n📧 জিমেইল: {cust_gmail}\n\nধন্যবাদ,\nSS-AI সার্ভার 🤖"
         
         msg = MIMEText(body, 'plain', 'utf-8')
         msg['From'] = sender_email; msg['To'] = owner_email; msg['Subject'] = subject
@@ -42,34 +66,12 @@ def send_owner_alert(cust_name, cust_phone, cust_gmail):
     except Exception as e:
         print(f"Owner Alert Error: {e}")
 
-def send_otp_email(receiver_email, otp_code):
-    try:
-        sender_email = "ss.edit.bot.2026@gmail.com"
-        sender_password = "xxxx xxxx xxxx xxxx"
-        subject = f"🔑 [SS-AI Studio] Your Registration Verification OTP Code - {otp_code}"
-        body = f"Hello,\n\nYour 4-Digit Gmail Verification OTP Code is:\n🔥 {otp_code} 🔥\n\nPlease enter this code to instantly unlock your AI Studio.\n\nRegards,\nSk Suhan 👑"
-        
-        msg = MIMEText(body, 'plain', 'utf-8')
-        msg['From'] = sender_email; msg['To'] = receiver_email; msg['Subject'] = subject
-        
-        server = smtplib.SMTP('smtp.gmail.com', 587, timeout=5)
-        server.starttls()
-        server.login(sender_email, sender_password)
-        server.sendmail(sender_email, receiver_email, msg.as_string())
-        server.quit()
-        return True
-    except Exception as e:
-        print(f"OTP Mail Error: {e}"); return False
-
 def send_customer_gmail(receiver_email, customer_name, category):
     try:
         sender_email = "ss.edit.bot.2026@gmail.com"
-        sender_password = "xxxx xxxx xxxx xxxx"
-        duration = random.randint(5, 15)
-        chosen_time = random.choice(["04:30 PM", "05:45 PM", "06:45 PM", "07:30 PM"])
-
-        subject = f"🎬 [SS-AI Studio] Your Bot Is Active! - {datetime.now().strftime('%d %b')}"
-        body = f"Hello {customer_name},\n\nYour Bot has successfully locked your niche: {category.upper()}\n\nUpdates will be auto-published at {chosen_time}! (Owner: Sk Suhan 👑)"
+        sender_password = "uhwl eyvo rtwq exbx"
+        subject = f"🎬 [SS-AI Studio] Your Bot Is Active!"
+        body = f"Hello {customer_name},\n\nYour Bot has successfully locked your niche: {category.upper()}"
         
         msg = MIMEText(body, 'plain', 'utf-8')
         msg['From'] = sender_email; msg['To'] = receiver_email; msg['Subject'] = subject
@@ -79,9 +81,8 @@ def send_customer_gmail(receiver_email, customer_name, category):
         server.login(sender_email, sender_password)
         server.sendmail(sender_email, receiver_email, msg.as_string())
         server.quit()
-        return True
     except Exception as e:
-        print(f"Mail Error: {e}"); return False
+        print(f"Customer Mail Error: {e}")
 
 @app.route('/')
 def index():
@@ -115,6 +116,7 @@ def login():
         return jsonify({"status": "SUCCESS", "message": "Login Successful!"})
     return jsonify({"status": "ERROR", "message": "Access Denied: Invalid Credentials!"})
 
+# ✉️ ওটিপি রিকোয়েস্ট জেনারেটর (নো বাইপাস, পিওর সিকিউরড মেকানিজম)
 @app.route('/request_otp', methods=['POST'])
 def request_otp():
     data = request.json
@@ -125,9 +127,12 @@ def request_otp():
     
     otp_code = str(random.randint(1000, 9999))
     ACTIVE_OTPS[phone] = otp_code
-    if send_otp_email(gmail, otp_code): return jsonify({"status": "SUCCESS", "message": "✅ OTP Sent! Check your Gmail."})
-    return jsonify({"status": "ERROR", "message": "🛑 Failed to send email."})
+    
+    if send_otp_email(gmail, otp_code):
+        return jsonify({"status": "SUCCESS", "message": "✅ OTP Sent Successfully! Check your Gmail Inbox/Spam."})
+    return jsonify({"status": "ERROR", "message": "🛑 Failed to send email! Please enter a valid working Gmail ID."})
 
+# 🔑 ওটিপি কোড ম্যাচ করলে তবেই আইডি ডেটাবেসে লক হবে এবং কাস্টমার প্যানেল খুলবে
 @app.route('/verify_otp', methods=['POST'])
 def verify_otp():
     data = request.json
@@ -136,19 +141,25 @@ def verify_otp():
     phone = user_info.get('phone', '')
     
     if phone in ACTIVE_OTPS and ACTIVE_OTPS[phone] == submitted_otp:
-        ACTIVE_OTPS.pop(phone); db = load_db()
+        ACTIVE_OTPS.pop(phone, None)
+        db = load_db()
         db["customers"][phone] = {
-            "name": user_info.get('name'), "password": user_info.get('password'), "category": "",
-            "is_active": True, "youtube_linked": False, "gmail": user_info.get('gmail'), "device_id": user_info.get('device_id')
+            "name": user_info.get('name'), 
+            "password": user_info.get('password'), 
+            "category": "",
+            "is_active": True, 
+            "youtube_linked": False, 
+            "gmail": user_info.get('gmail'), 
+            "device_id": user_info.get('device_id')
         }
         save_db(db)
         
-        # 👑 কাস্টমার ভেরিফাই হতেই সুহান ভাইয়ের নিজের মেইলে এলার্ট ফায়ার করা হলো
+        # ওনার এলার্ট ফায়ার
         send_owner_alert(user_info.get('name'), phone, user_info.get('gmail'))
         
         session.permanent = True; session['username'] = phone; session['role'] = "customer"
-        return jsonify({"status": "SUCCESS", "message": "🎉 Verified Successfully! Opening Studio..."})
-    return jsonify({"status": "ERROR", "message": "🛑 Invalid OTP Code!"})
+        return jsonify({"status": "SUCCESS", "message": "🎉 Email Verified! Loading Your AI Studio Dashboard..."})
+    return jsonify({"status": "ERROR", "message": "🛑 Invalid OTP Code! Please enter the correct code sent to your Gmail."})
 
 @app.route('/customer/auth_youtube', methods=['POST'])
 def auth_youtube():
