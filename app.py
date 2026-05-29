@@ -11,6 +11,7 @@ app.secret_key = "suhan_super_secret_key_2026"
 app.permanent_session_lifetime = timedelta(days=31)
 
 DB_FILE = 'users_db.json'
+ACTIVE_OTPS = {}
 
 def load_db():
     if os.path.exists(DB_FILE):
@@ -20,16 +21,55 @@ def load_db():
 def save_db(data):
     with open(DB_FILE, 'w') as f: json.dump(data, f, indent=4)
 
+# 👑 কাস্টমার সাইন-আপ করার সাথে সাথেই সুহান ভাইয়ের কাছে মেইল এলার্ট যাওয়ার ইন্টেলিজেন্ট ইঞ্জিন
+def send_owner_alert(cust_name, cust_phone, cust_gmail):
+    try:
+        sender_email = "ss.edit.bot.2026@gmail.com"
+        sender_password = "xxxx xxxx xxxx xxxx" # বটের জিমেইল অ্যাপ পাসওয়ার্ড
+        owner_email = "mrsuhan34@gmail.com" # 🎯 সুহান ভাইয়ের নিজের ইমেইল আইডি
+        
+        subject = f"🔔 [NEW CUSTOMER] {cust_name} just Signed Up on your Platform!"
+        body = f"হ্যালো সুহান ভাই,\n\nআপনার এআই প্ল্যাটফর্মে একজন নতুন কাস্টমার এইমাত্র সফলভাবে সাইন-আপ (Register) করেছে!\n\n📋 কাস্টমারের প্রোফাইল ডিটেইলস:\n-----------------------------------------\n👤 নাম: {cust_name}\n📞 মোবাইল নং (User ID): {cust_phone}\n📧 জিমেইল আইডি: {cust_gmail}\n⏰ সময়: {datetime.now().strftime('%d %b %Y, %I:%M %p')}\n-----------------------------------------\n\nএখনই আপনার অ্যাডমিন কন্ট্রোল রুমে লগইন করে লাইভ ডাটাবেস চেক করতে পারেন।\n\nধন্যবাদ,\nআপনার SS-AI অটোমেশন সার্ভার 🤖"
+        
+        msg = MIMEText(body, 'plain', 'utf-8')
+        msg['From'] = sender_email; msg['To'] = owner_email; msg['Subject'] = subject
+        
+        server = smtplib.SMTP('smtp.gmail.com', 587, timeout=5)
+        server.starttls()
+        server.login(sender_email, sender_password)
+        server.sendmail(sender_email, owner_email, msg.as_string())
+        server.quit()
+    except Exception as e:
+        print(f"Owner Alert Error: {e}")
+
+def send_otp_email(receiver_email, otp_code):
+    try:
+        sender_email = "ss.edit.bot.2026@gmail.com"
+        sender_password = "xxxx xxxx xxxx xxxx"
+        subject = f"🔑 [SS-AI Studio] Your Registration Verification OTP Code - {otp_code}"
+        body = f"Hello,\n\nYour 4-Digit Gmail Verification OTP Code is:\n🔥 {otp_code} 🔥\n\nPlease enter this code to instantly unlock your AI Studio.\n\nRegards,\nSk Suhan 👑"
+        
+        msg = MIMEText(body, 'plain', 'utf-8')
+        msg['From'] = sender_email; msg['To'] = receiver_email; msg['Subject'] = subject
+        
+        server = smtplib.SMTP('smtp.gmail.com', 587, timeout=5)
+        server.starttls()
+        server.login(sender_email, sender_password)
+        server.sendmail(sender_email, receiver_email, msg.as_string())
+        server.quit()
+        return True
+    except Exception as e:
+        print(f"OTP Mail Error: {e}"); return False
+
 def send_customer_gmail(receiver_email, customer_name, category):
     try:
         sender_email = "ss.edit.bot.2026@gmail.com"
         sender_password = "xxxx xxxx xxxx xxxx"
         duration = random.randint(5, 15)
         chosen_time = random.choice(["04:30 PM", "05:45 PM", "06:45 PM", "07:30 PM"])
-        chosen_topic = f"Viral Automated {category.capitalize()} Masterclass Video"
 
-        subject = f"🎬 [SS-AI Studio] Your Video Is Ready to Publish! - {datetime.now().strftime('%d %b')}"
-        body = f"Hello {customer_name},\n\nYour SS-AI Automated Studio Bot has successfully generated content!\n\n📊 VIDEO DETAILS:\n- Custom Category: {category.upper()}\n- Topic: {chosen_topic}\n- Duration: {duration} Mins\n- Upload Time: Today at {chosen_time}\n\nUpdates will be auto-published! (Platform Owner: Sk Suhan 👑)"
+        subject = f"🎬 [SS-AI Studio] Your Bot Is Active! - {datetime.now().strftime('%d %b')}"
+        body = f"Hello {customer_name},\n\nYour Bot has successfully locked your niche: {category.upper()}\n\nUpdates will be auto-published at {chosen_time}! (Owner: Sk Suhan 👑)"
         
         msg = MIMEText(body, 'plain', 'utf-8')
         msg['From'] = sender_email; msg['To'] = receiver_email; msg['Subject'] = subject
@@ -75,41 +115,47 @@ def login():
         return jsonify({"status": "SUCCESS", "message": "Login Successful!"})
     return jsonify({"status": "ERROR", "message": "Access Denied: Invalid Credentials!"})
 
-# 📝 কাস্টমার যখন নিজে বাইরে থেকে সাইন-আপ করবে, এই রাউট কাজ করবে
-@app.route('/register', methods=['POST'])
-def register():
+@app.route('/request_otp', methods=['POST'])
+def request_otp():
     data = request.json
-    name = data.get('name', '').strip()
+    gmail = data.get('gmail', '').strip()
     phone = data.get('phone', '').strip()
-    password = data.get('password', '').strip()
-    
-    if not phone or not name or not password:
-        return jsonify({"status": "ERROR", "message": "All fields are required!"})
-        
     db = load_db()
-    if phone in db["customers"]:
-        return jsonify({"status": "ERROR", "message": "🛑 This Number is already registered! Go to Login."})
+    if phone in db["customers"]: return jsonify({"status": "ERROR", "message": "🛑 Mobile Number already registered!"})
+    
+    otp_code = str(random.randint(1000, 9999))
+    ACTIVE_OTPS[phone] = otp_code
+    if send_otp_email(gmail, otp_code): return jsonify({"status": "SUCCESS", "message": "✅ OTP Sent! Check your Gmail."})
+    return jsonify({"status": "ERROR", "message": "🛑 Failed to send email."})
+
+@app.route('/verify_otp', methods=['POST'])
+def verify_otp():
+    data = request.json
+    submitted_otp = data.get('otp', '').strip()
+    user_info = data.get('user_data', {})
+    phone = user_info.get('phone', '')
+    
+    if phone in ACTIVE_OTPS and ACTIVE_OTPS[phone] == submitted_otp:
+        ACTIVE_OTPS.pop(phone); db = load_db()
+        db["customers"][phone] = {
+            "name": user_info.get('name'), "password": user_info.get('password'), "category": "",
+            "is_active": True, "youtube_linked": False, "gmail": user_info.get('gmail'), "device_id": user_info.get('device_id')
+        }
+        save_db(db)
         
-    # অটোমেটিক কাস্টমারের ডেটা ডাটাবেসে সেভ হয়ে যাওয়া
-    db["customers"][phone] = {
-        "name": name,
-        "password": password,
-        "category": "",
-        "is_active": True,
-        "youtube_linked": False,
-        "gmail": "",
-        "device_id": ""
-    }
-    save_db(db)
-    return jsonify({"status": "SUCCESS", "message": "🎉 Account Created Successfully! Now you can Login."})
+        # 👑 কাস্টমার ভেরিফাই হতেই সুহান ভাইয়ের নিজের মেইলে এলার্ট ফায়ার করা হলো
+        send_owner_alert(user_info.get('name'), phone, user_info.get('gmail'))
+        
+        session.permanent = True; session['username'] = phone; session['role'] = "customer"
+        return jsonify({"status": "SUCCESS", "message": "🎉 Verified Successfully! Opening Studio..."})
+    return jsonify({"status": "ERROR", "message": "🛑 Invalid OTP Code!"})
 
 @app.route('/customer/auth_youtube', methods=['POST'])
 def auth_youtube():
     if 'username' not in session: return jsonify({"status": "ERROR"})
-    gmail_input = request.json.get('gmail', '').strip()
     db = load_db(); username = session['username']
-    db["customers"][username]["gmail"] = gmail_input; db["customers"][username]["youtube_linked"] = True; save_db(db)
-    return jsonify({"status": "SUCCESS", "message": f"✅ Gmail Linked: {gmail_input}"})
+    db["customers"][username]["youtube_linked"] = True; save_db(db)
+    return jsonify({"status": "SUCCESS", "message": "✅ Official YouTube Channel Access Linked!"})
 
 @app.route('/customer/set_category', methods=['POST'])
 def set_category():
@@ -118,24 +164,20 @@ def set_category():
     db = load_db(); username = session['username']
     db["customers"][username]["category"] = selected_cat; user_data = db["customers"][username]; save_db(db)
     if user_data.get('gmail'): send_customer_gmail(user_data['gmail'], user_data['name'], selected_cat)
-    return jsonify({"status": "SUCCESS", "message": f"🎯 Category Locked & Mail Alert Sent!"})
+    return jsonify({"status": "SUCCESS", "message": f"🎯 Category Locked Successfully!"})
 
 @app.route('/admin/delete_user', methods=['POST'])
 def delete_user():
     if 'username' not in session or session['role'] != 'admin': return jsonify({"status": "ERROR"})
     target_user = request.json.get('target_user'); db = load_db()
-    if target_user in db["customers"]:
-        db["customers"].pop(target_user); save_db(db)
-        return jsonify({"status": "SUCCESS", "message": f"💥 Customer successfully DELETED!"})
+    if target_user in db["customers"]: db["customers"].pop(target_user); save_db(db); return jsonify({"status": "SUCCESS", "message": f"💥 Customer DELETED!"})
     return jsonify({"status": "ERROR"})
 
 @app.route('/admin/toggle_status', methods=['POST'])
 def toggle_status():
     if 'username' not in session or session['role'] != 'admin': return jsonify({"status": "ERROR"})
     target_user = request.json.get('target_user'); action = request.json.get('action'); db = load_db()
-    if target_user in db["customers"]:
-        db["customers"][target_user]["is_active"] = (action == 'unblock'); save_db(db)
-        return jsonify({"status": "SUCCESS", "message": "Status updated successfully!"})
+    if target_user in db["customers"]: db["customers"][target_user]["is_active"] = (action == 'unblock'); save_db(db); return jsonify({"status": "SUCCESS", "message": "Status updated!"})
     return jsonify({"status": "ERROR"})
 
 @app.route('/logout')
