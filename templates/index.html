@@ -1,118 +1,134 @@
 <!DOCTYPE html>
-<html lang="bn">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SS-AI SaaS Platform</title>
+    <title>SS-AI Enterprise SaaS Platform</title>
     <style>
-        body { background: #0f0f12; color: #e0e0e0; font-family: 'Segoe UI', Arial, sans-serif; text-align: center; padding: 40px; }
-        .box { background: #17171f; padding: 40px; border-radius: 15px; display: inline-block; box-shadow: 0 4px 15px rgba(0,255,204,0.1); max-width: 450px; width: 100%; border: 1px solid #222; }
+        body { background: #0f0f12; color: #e0e0e0; font-family: 'Segoe UI', Arial, sans-serif; text-align: center; padding: 40px; margin: 0; }
+        .box { background: #17171f; padding: 40px; border-radius: 15px; display: inline-block; box-shadow: 0 4px 15px rgba(0,255,204,0.1); max-width: 480px; width: 100%; border: 1px solid #222; position: relative; margin-top: 20px; }
         h2 { color: #00ffcc; margin-bottom: 5px; }
         input, select { padding: 12px; margin: 10px 0; width: 90%; border-radius: 8px; border: 1px solid #333; background: #0f0f12; color: #fff; }
         button { background: #00ffcc; color: #0b0b0e; padding: 12px 25px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; width: 95%; transition: 0.3s; margin-top: 10px; }
         button:hover { background: #00cc99; box-shadow: 0 0 10px rgba(0,255,204,0.4); }
-        .logout-btn { background: #ff4444; color: white; margin-top: 20px; }
-        .logout-btn:hover { background: #cc3333; }
-        .client-card { background: #222; padding: 10px; margin: 10px 0; border-radius: 8px; text-align: left; display: flex; justify-content: space-between; align-items: center; }
-        .kick-btn { background: #ff4444; color: white; padding: 5px 10px; width: auto; font-size: 12px; margin: 0; }
+        .google-btn { background: #4285F4; color: white; margin-top: 15px; }
+        .google-btn:hover { background: #357ae8; box-shadow: 0 0 10px rgba(66,133,244,0.4); }
+        .menu-container { position: absolute; top: 15px; right: 15px; cursor: pointer; }
+        .three-dots { font-size: 24px; color: #888; padding: 5px 10px; }
+        .dropdown-menu { display: none; position: absolute; right: 0; top: 35px; background: #222; border: 1px solid #333; border-radius: 5px; width: 120px; z-index: 100; }
+        .dropdown-menu a { color: #ff4444; padding: 10px; display: block; text-decoration: none; font-size: 14px; font-weight: bold; text-align: left; }
+        .client-card { background: #222; padding: 15px; margin: 15px 0; border-radius: 8px; text-align: left; border: 1px solid #333; }
+        .action-btn { padding: 6px 12px; font-size: 11px; font-weight: bold; border: none; border-radius: 4px; cursor: pointer; margin-right: 5px; margin-top: 8px; float: right; color: white; }
+        .btn-reset { background: #ffaa00; color: black; }
+        .btn-block { background: #ff4444; }
+        .btn-unblock { background: #00cc66; }
+        .info-row { font-size: 13px; color: #aaa; margin: 4px 0; }
     </style>
 </head>
 <body>
-
     <div class="box">
+        {% if role != 'guest' %}
+            <div class="menu-container" onclick="toggleMenu()">
+                <div class="three-dots">⋮</div>
+                <div class="dropdown-menu" id="myDropdown">
+                    <a href="/logout">🚪 Log Out</a>
+                </div>
+            </div>
+        {% endif %}
+
         {% if role == 'guest' %}
-            <h2>🚀 SS-AI SaaS প্ল্যাটফর্ম</h2>
-            <p style="color: #888;">অ্যাডমিন ও কাস্টমার পোর্টাল</p>
-            <input type="text" id="user" placeholder="Username"><br>
-            <input type="password" id="pass" placeholder="Password"><br>
-            <button onclick="login()">LOGIN SYSTEM</button>
+            <h2>🚀 SS-AI SaaS Platform</h2>
+            <p style="color: #888;">Secure Login Gateway</p>
+            <input type="text" id="user" placeholder="Enter Mobile Number / Admin User ID"><br>
+            <input type="password" id="pass" placeholder="Enter Password"><br>
+            <button onclick="login()">SECURE LOGIN</button>
             <div id="msg" style="margin-top: 15px; color: #00ffcc; font-weight: bold;"></div>
 
         {% elif role == 'admin' %}
-            <h2>👑 অ্যাডমিন কন্ট্রোল রুম</h2>
-            <p style="color: #00ffcc;">স্বাগতম সুহান ভাই</p>
+            <h2>👑 Admin Control Room</h2>
+            <p style="color: #00ffcc;">Platform Owner Mode</p>
             <hr style="border-color: #333;">
-            <h4 style="text-align: left; margin-bottom: 5px;">চলতি কাস্টমার লিস্ট:</h4>
+            <h4 style="text-align: left; margin-bottom: 5px; color: #00ffcc;">Customer Credentials & Status:</h4>
             <div id="client-list">
-                {% for name, info in customers.items() %}
+                {% for phone, info in customers.items() %}
                     <div class="client-card">
-                        <div>
-                            <strong>{{ name }}</strong> <br>
-                            <span style="font-size: 12px; color: #888;">ক্যাটাগরি: {{ info.category if info.category else 'নট সেট' }} | স্ট্যাটাস: {{ 'Active' if info.is_active else 'Blocked' }}</span>
-                        </div>
                         {% if info.is_active %}
-                            <button class="kick-btn" onclick="kick('{{ name }}')">KICK OUT</button>
+                            <button class="action-btn btn-block" onclick="toggleStatus('{{ phone }}', 'block')">❌ BLOCK ID</button>
+                        {% else %}
+                            <button class="action-btn btn-unblock" onclick="toggleStatus('{{ phone }}', 'unblock')">✅ UNBLOCK ID</button>
                         {% endif %}
+                        <button class="action-btn btn-reset" onclick="resetDevice('{{ phone }}')">🔄 KICK & RESET</button>
+                        <strong>👤 Name: <span style="color: #00ffcc;">{{ info.name }}</span></strong> <br>
+                        <div class="info-row">📞 <b>Mobile ID:</b> {{ phone }}</div>
+                        <div class="info-row">📧 <b>Linked Gmail:</b> <span style="color: #00ffcc;">{{ info.gmail if info.gmail else 'Not Connected' }}</span></div>
+                        <div class="info-row">🔑 <b>Password:</b> <span style="color: #ffcc00;">{{ info.password }}</span></div>
+                        <div class="info-row">🎯 <b>Category:</b> {{ info.category.upper() if info.category else 'NOT SET' }}</div>
+                        <div class="info-row">📊 <b>Status:</b> <span style="font-weight: bold; color: {{ '#00ffcc' if info.is_active else '#ff4444' }}">{{ 'ACTIVE' if info.is_active else 'BLOCKED' }}</span></div>
+                        <div style="clear: both;"></div>
                     </div>
                 {% endfor %}
             </div>
-            <button class="logout-btn" onclick="location.href='/logout'">LOG OUT</button>
 
         {% elif role == 'customer' %}
-            <h2>🎨 কাস্টমার এআই স্টুডিও</h2>
-            <p>হ্যালো, <strong style="color: #00ffcc;">{{ username }}</strong></p>
+            <h2>🎨 Customer AI Studio</h2>
+            <div style="text-align: left; background: #222; padding: 12px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #00ffcc;">
+                <p style="margin: 0; font-size: 16px;">👤 Name: <b>{{ name }}</b></p>
+                <p style="margin: 5px 0 0 0; font-size: 13px; color: #aaa;">📞 Mobile ID: <b>{{ username }}</b></p>
+            </div>
             <hr style="border-color: #333;">
             
-            {% if not category %}
-                <p style="color: #ffcc00;">⚠️ ওয়ান-টাইম ক্যাটাগরি সিলেক্ট করুন (এটি পরে বদলানো যাবে না):</p>
-                <select id="cat-select">
-                    <option value="gaming">Gaming (ফ্রি ফায়ার, পাবজি ট্রেন্ড)</option>
-                    <option value="cooking">Cooking (রেসিপি ও ফুড মেকিং)</option>
-                    <option value="tech">Tech (গ্যাজেট ও এআই টেক রিভিউ)</option>
-                    <option value="cartoon">Cartoon (বাংলা কার্টুন গল্প)</option>
-                    <option value="motivation">Motivation (অনুপ্রেরণামূলক উক্তি)</option>
-                </select>
-                <button onclick="setCategory()">LOCK CATEGORY</button>
+            {% if not linked %}
+                <p style="color: #ffcc00;">⚠️ Step 1: Connect Gmail & Grant YouTube Access:</p>
+                <input type="email" id="cust-gmail" placeholder="Enter Your Active Gmail Account" style="width: 90%;"><br>
+                <button class="google-btn" onclick="connectGoogle()">🔗 LINK YOUTUBE VIA GOOGLE</button>
+                <hr style="border-color: #333; margin: 20px 0;">
             {% else %}
-                <p>🎯 আপনার লক করা ক্যাটাগরি: <strong style="color: #00ffcc;">{{ category.upper() }}</strong></p>
+                <p style="color: #00ffcc;">✅ YouTube & Gmail Connection Active! ({{ gmail_id }})</p>
+            {% endif %}
+
+            {% if not category %}
+                <p style="color: #ffcc00;">⚠️ Step 2: Select One-Time Category (Locked Forever):</p>
+                <select id="cat-select">
+                    <option value="gaming">Gaming Niche (Free Fire, BGMI Trends)</option>
+                    <option value="cooking">Cooking Niche (Recipes & Food Videos)</option>
+                    <option value="tech">Tech Niche (Gadget & AI Reviews)</option>
+                    <option value="cartoon">Cartoon Niche (Bengali Cartoon Stories)</option>
+                    <option value="motivation">Motivation Niche (Inspirational Quotes)</option>
+                </select>
+                <button onclick="setCategory()">LOCK CATEGORY & START BOT</button>
+            {% else %}
+                <p>🎯 Your Locked Category: <strong style="color: #00ffcc;">{{ category.upper() }}</strong></p>
                 <div style="background: #222; padding: 15px; border-radius: 8px; margin: 20px 0; color: #00ffcc; font-weight: bold;">
-                    🤖 এআই বট ব্যাকগ্রাউন্ডে আপনার ইউটিউব চ্যানেলের সাথে কানেক্টেড আছে এবং অটো-কাজ করছে।
+                    🤖 AI Bot is running securely. Automation updates will be sent directly to your linked Gmail!
                 </div>
             {% endif %}
-            
-            <button class="logout-btn" onclick="location.href='/logout'">LOG OUT</button>
             <div id="msg" style="margin-top: 15px; color: #ffcc00; font-weight: bold;"></div>
         {% endif %}
     </div>
 
     <script>
+        function getDeviceID() {
+            let id = localStorage.getItem('ss_device_token');
+            if (!id) { id = 'DEV-' + Math.random().toString(36).substring(2, 15); localStorage.setItem('ss_device_token', id); }
+            return id;
+        }
+        function toggleMenu() { let m = document.getElementById('myDropdown'); m.style.display = (m.style.display === 'block') ? 'none' : 'block'; }
+        window.onclick = function(e) { if (!e.target.matches('.three-dots')) { let d = document.getElementById('myDropdown'); if (d) d.style.display = 'none'; } }
+
         function login() {
-            let u = document.getElementById('user').value;
-            let p = document.getElementById('pass').value;
-            fetch('/login', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({username: u, password: p})
-            })
-            .then(res => res.json())
-            .then(data => {
-                document.getElementById('msg').innerText = data.message;
-                if(data.status === "SUCCESS") { setTimeout(() => { location.reload(); }, 1000); }
-            });
+            let u = document.getElementById('user').value; let p = document.getElementById('pass').value; let devId = getDeviceID();
+            fetch('/login', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({username: u, password: p, device_id: devId}) })
+            .then(res => res.json()).then(data => { document.getElementById('msg').innerText = data.message; if(data.status === "SUCCESS") { setTimeout(() => { location.reload(); }, 1000); } });
         }
-
-        function kick(username) {
-            fetch('/admin/kick', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({target_user: username})
-            })
-            .then(res => res.json())
-            .then(data => { alert(data.message); location.reload(); });
+        function connectGoogle() {
+            let g = document.getElementById('cust-gmail').value; if(!g || !g.includes('@')) { alert("Enter valid Gmail!"); return; }
+            fetch('/customer/auth_youtube', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({gmail: g}) }).then(res => res.json()).then(data => { alert(data.message); location.reload(); });
         }
-
+        function resetDevice(phoneNum) { fetch('/admin/reset_device', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({target_user: phoneNum}) }).then(res => res.json()).then(data => { alert(data.message); location.reload(); }); }
+        function toggleStatus(phoneNum, actionType) { fetch('/admin/toggle_status', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({target_user: phoneNum, action: actionType}) }).then(res => res.json()).then(data => { alert(data.message); location.reload(); }); }
         function setCategory() {
             let cat = document.getElementById('cat-select').value;
-            fetch('/customer/set_category', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({category: cat})
-            })
-            .then(res => res.json())
-            .then(data => {
-                document.getElementById('msg').innerText = data.message;
-                if(data.status === "SUCCESS") { setTimeout(() => { location.reload(); }, 1500); }
-            });
+            fetch('/customer/set_category', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({category: cat}) }).then(res => res.json()).then(data => { document.getElementById('msg').innerText = data.message; if(data.status === "SUCCESS") { setTimeout(() => { location.reload(); }, 1500); } });
         }
     </script>
 </body>
