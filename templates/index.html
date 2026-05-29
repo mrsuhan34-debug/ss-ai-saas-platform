@@ -10,6 +10,7 @@
         h2 { color: #00ffcc; margin-bottom: 5px; }
         input { padding: 12px; margin: 10px 0; width: 100%; border-radius: 8px; border: 1px solid #333; background: #0f0f12; color: #fff; box-sizing: border-box; padding-right: 45px; }
         
+        /* 👁️ পাসওয়ার্ড বক্স ও চোখের আইকন স্টাইল */
         .pass-wrapper { position: relative; width: 100%; }
         .eye-icon { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #00ffcc; font-size: 20px; user-select: none; z-index: 10; font-weight: bold; }
         
@@ -17,26 +18,31 @@
         button:hover { background: #00cc99; box-shadow: 0 0 10px rgba(0,255,204,0.4); }
         .google-btn { background: #4285F4; color: white; margin-top: 15px; font-weight: bold; width: 100%; padding: 12px; border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
         .google-btn:hover { background: #357ae8; box-shadow: 0 0 10px rgba(66,133,244,0.4); }
-        .menu-container { position: absolute; top: 15px; right: 15px; cursor: pointer; }
-        .three-dots { font-size: 24px; color: #888; padding: 5px 10px; }
-        .dropdown-menu { display: none; position: absolute; right: 0; top: 35px; background: #222; border: 1px solid #333; border-radius: 5px; width: 120px; z-index: 100; }
-        .dropdown-menu a { color: #ff4444; padding: 10px; display: block; text-decoration: none; font-size: 14px; font-weight: bold; text-align: left; }
+        
         .client-card { background: #222; padding: 15px; margin: 15px 0; border-radius: 8px; text-align: left; border: 1px solid #333; }
         .action-btn { padding: 6px 12px; font-size: 11px; font-weight: bold; border: none; border-radius: 4px; cursor: pointer; margin-right: 5px; margin-top: 8px; float: right; color: white; }
         .btn-delete { background: #ff4444; }
-        .btn-block { background: #ffaa00; color: black; }
-        .btn-unblock { background: #00cc66; }
         .btn-approve { background: #00cc66; color: white; }
         .btn-reject { background: #ff4444; color: white; }
         .info-row { font-size: 13px; color: #aaa; margin: 4px 0; }
         .toggle-link { color: #00ffcc; cursor: pointer; text-decoration: underline; font-size: 14px; display: inline-block; margin-top: 15px; }
         
+        /* 🎯 সার্চ সাজেশন ড্রপডাউন */
         .search-container { position: relative; width: 100%; text-align: left; margin-top: 10px; }
         .suggestion-box { position: absolute; top: 100%; left: 0; width: 100%; background: #1f1f2e; border: 1px solid #333; border-radius: 8px; max-height: 180px; overflow-y: auto; z-index: 9999; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.6); box-sizing: border-box; }
         .suggestion-item { padding: 11px 15px; cursor: pointer; color: #e0e0e0; border-bottom: 1px solid #2a2a3a; font-size: 13.5px; text-align: left; }
         .suggestion-item:hover { background: #00ffcc; color: #0b0b0e; font-weight: bold; }
         
         .success-badge { background: #112a22; color: #00ffcc; padding: 15px; border-radius: 8px; border: 1px solid #00cc66; font-weight: bold; margin: 15px 0; font-size: 14px; text-align: center; border-left: 4px solid #00ffcc; }
+        
+        /* 🎬 এআই লাইভ ট্র্যাকিং ড্যাশবোর্ড কার্ড */
+        .ai-tracker-card { background: #14141f; border: 1px solid #00ffcc; border-radius: 12px; padding: 20px; margin-top: 15px; text-align: left; box-shadow: 0 0 15px rgba(0,255,204,0.15); }
+        .tracker-row { margin-bottom: 12px; font-size: 14.5px; color: #ccc; border-bottom: 1px dashed #222; padding-bottom: 8px; }
+        .tracker-row:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+        .tracker-label { font-weight: bold; color: #888; font-size: 13px; text-transform: uppercase; display: block; margin-bottom: 2px; }
+        .tracker-value { color: #fff; font-weight: 500; }
+        .live-pulse { width: 8px; height: 8px; background: #00ffcc; border-radius: 50%; display: inline-block; margin-right: 6px; box-shadow: 0 0 8px #00ffcc; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { transform: scale(0.9); opacity: 0.6; } 50% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(0.9); opacity: 0.6; } }
     </style>
 </head>
 <body>
@@ -113,16 +119,10 @@
                 {% for phone, info in customers.items() %}
                     {% if info.is_approved %}
                         <div class="client-card">
-                            {% if info.is_active %}
-                                <button class="action-btn btn-block" onclick="toggleStatus('{{ phone }}', 'block')">❌ BLOCK ID</button>
-                            {% else %}
-                                <button class="action-btn btn-unblock" onclick="toggleStatus('{{ phone }}', 'unblock')">✅ UNBLOCK ID</button>
-                            {% endif %}
                             <button class="action-btn btn-delete" onclick="deleteCustomer('{{ phone }}')">🗑️ DELETE & KICK</button>
                             <strong>👤 Name: <span style="color: #00ffcc;">{{ info.name }}</span></strong> <br>
                             <div class="info-row">📞 <b>Mobile ID:</b> {{ phone }}</div>
                             <div class="info-row">📧 <b>Gmail:</b> {{ info.gmail }}</div>
-                            <div class="info-row">🔑 <b>Password:</b> <span style="color: #ffcc00;">{{ info.password }}</span></div>
                             <div class="info-row">🎯 <b>Category:</b> {{ info.category.upper() if info.category else 'NOT SET' }}</div>
                         </div>
                     {% endif %}
@@ -137,59 +137,78 @@
             </div>
             <hr style="border-color: #333;">
             
-            <div id="youtube-section">
-                {% if not linked %}
-                    <p style="color: #ffcc00; text-align: left;">⚠️ Step 1: Connect Official YouTube Link Access:</p>
-                    <button class="google-btn" id="yt-connect-btn" onclick="connectGoogle()">🔗 LINK YOUTUBE VIA GOOGLE</button>
-                {% else %}
-                    <div class="success-badge">✅ YouTube Channel Connected Successfully!</div>
-                {% endif %}
-            </div>
-            <hr style="border-color: #333; margin: 20px 0;">
+            {% if not linked or not category %}
+                <div id="youtube-section">
+                    {% if not linked %}
+                        <p style="color: #ffcc00; text-align: left;">⚠️ Step 1: Connect Official YouTube Link Access:</p>
+                        <button class="google-btn" id="yt-connect-btn" onclick="connectGoogle()">🔗 LINK YOUTUBE VIA GOOGLE</button>
+                    {% else %}
+                        <div class="success-badge">✅ YouTube Channel Connected Successfully!</div>
+                    {% endif %}
+                </div>
+                <hr style="border-color: #333; margin: 20px 0;">
 
-            <div id="category-section">
-                {% if not category %}
-                    <p style="color: #ffcc00; text-align: left;">⚠️ Step 2: Search & Select Category (Start Bot Engine):</p>
-                    <div class="search-container">
-                        <input type="text" id="cat-search" oninput="filterCategories()" placeholder="Type to search official YouTube niche..." autocomplete="off">
-                        <div class="suggestion-box" id="suggestion-box"></div>
+                <div id="category-section">
+                    {% if not category %}
+                        <p style="color: #ffcc00; text-align: left;">⚠️ Step 2: Search & Select Category (Start Bot Engine):</p>
+                        <div class="search-container">
+                            <input type="text" id="cat-search" oninput="filterCategories()" placeholder="Type to search official YouTube niche..." autocomplete="off">
+                            <div class="suggestion-box" id="suggestion-box"></div>
+                        </div>
+                        <button onclick="setCategory()" style="margin-top: 15px;">LOCK CATEGORY & START BOT</button>
+                    {% else %}
+                        <div class="success-badge" style="border-color: #00ffcc; color: #00ffcc;">🎯 Locked Niche: {{ category.upper() }}</div>
+                    {% endif %}
+                </div>
+            {% else %}
+                <h3 style="color: #00ffcc; text-align: left; margin-bottom: 10px;">🤖 Live AI Engine Dashboard</h3>
+                <div class="ai-tracker-card">
+                    <div class="tracker-row">
+                        <span class="tracker-label">📧 Channel Target Mail</span>
+                        <span class="tracker-value" style="color: #00ffcc;">{{ gmail_id }}</span>
                     </div>
-                    <button onclick="setCategory()" style="margin-top: 15px;">LOCK CATEGORY & START BOT</button>
-                {% else %}
-                    <div class="success-badge" style="border-color: #00ffcc; color: #00ffcc;">🎯 Locked Niche: {{ category.upper() }}<br><br>🤖 AI Automation Bot Engine Active!</div>
-                {% endif %}
-            </div>
+                    <div class="tracker-row">
+                        <span class="tracker-label">🎯 Configured Niche</span>
+                        <span class="tracker-value">{{ category }}</span>
+                    </div>
+                    <div class="tracker-row">
+                        <span class="tracker-label">🎬 Current Production Topic</span>
+                        <span class="tracker-value" id="live-topic" style="color: #ffcc00;">Generating optimized topic...</span>
+                    </div>
+                    <div class="tracker-row">
+                        <span class="tracker-label">🔥 Recommended Viral Title</span>
+                        <span class="tracker-value" id="live-title" style="font-style: italic; color: #fff;">Analyzing keywords...</span>
+                    </div>
+                    <div class="tracker-row">
+                        <span class="tracker-label">📊 AI Traffic Optimizer (Best Upload Time)</span>
+                        <span class="tracker-value" id="live-time" style="color: #ffaa00; font-weight: bold;">Analyzing channel traffic...</span>
+                    </div>
+                    <div class="tracker-row" style="margin-top: 15px;">
+                        <span class="live-pulse"></span>
+                        <span style="font-size: 13px; color: #00ffcc; font-weight: bold;" id="live-status">AI BOT IS PROCESSING VIDEO...</span>
+                    </div>
+                </div>
+            {% endif %}
             <div id="msg" style="margin-top: 15px; color: #ffcc00; font-weight: bold;"></div>
         {% endif %}
     </div>
 
     <script>
         function togglePasswordVisibility(fieldId, eyeId) {
-            let field = document.getElementById(fieldId);
-            let eye = document.getElementById(eyeId);
-            if (field.type === "password") {
-                field.type = "text";
-                eye.innerText = "👁️";
-            } else {
-                field.type = "password";
-                eye.innerText = "🙈";
-            }
+            let field = document.getElementById(fieldId); let eye = document.getElementById(eyeId);
+            if (field.type === "password") { field.type = "text"; eye.innerText = "👁️"; } else { field.type = "password"; eye.innerText = "🙈"; }
         }
 
         const ytCategories = [
-            "Bangla Cartoon Video Animation (Special AI Niche)",
-            "Documentary Video Niche (History & Crime Explanations)", 
-            "AI Video Production (AI Avatars & Automation)",
-            "Film & Animation", "Music Niche (Lo-Fi Beats, Remixes)", "Gaming Niche (Hulk AI Animations)", 
-            "Gaming Niche (Free Fire Trends & Live)", "Gaming Niche (PUBG/BGMI Custom)", "Comedy Vines & Short Roasts", 
+            "Bangla Cartoon Video Animation (Special AI Niche)", "Documentary Video Niche (History & Crime Explanations)", 
+            "AI Video Production (AI Avatars & Automation)", "Film & Animation", "Music Niche (Lo-Fi Beats, Remixes)", 
+            "Gaming Niche (Hulk AI Animations)", "Gaming Niche (Free Fire Trends & Live)", "Comedy Vines & Short Roasts", 
             "Education (GK Quiz, AI Tutorials)", "Science & Technology (Gadget Unboxing)", "1-Minute Facts Shorts Niche", 
-            "Motivation & Self-Improvement Quotes", "ASMR Sound Therapy & Relaxing", "Daily Life Mini Vlogs & Travel Niche",
-            "Movie Explanations & Recaps (Bengali)", "Toy Review & Kids Stories Niche", "Title AI Niche & Keywords Automation"
+            "Motivation & Self-Improvement Quotes", "ASMR Sound Therapy & Relaxing", "Title AI Niche & Keywords Automation"
         ];
 
         function filterCategories() {
-            let input = document.getElementById('cat-search').value.toLowerCase();
-            let box = document.getElementById('suggestion-box'); box.innerHTML = '';
+            let input = document.getElementById('cat-search').value.toLowerCase(); let box = document.getElementById('suggestion-box'); box.innerHTML = '';
             if(!input) { box.style.display = 'none'; return; }
             let filtered = ytCategories.filter(cat => cat.toLowerCase().includes(input));
             if(filtered.length > 0) {
@@ -234,13 +253,8 @@
         function handleApproval(phoneNum, actionType) { fetch('/admin/handle_request', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({target_user: phoneNum, action: actionType}) }).then(res => res.json()).then(data => { alert(data.message); location.reload(); }); }
         
         function connectGoogle() { 
-            let btn = document.getElementById('yt-connect-btn');
-            btn.innerText = "Connecting Google API Server...";
-            
-            fetch('/customer/auth_youtube', { method: 'POST' })
-            .then(res => res.json()).then(data => {
-                document.getElementById('youtube-section').innerHTML = '<div class="success-badge">✅ YouTube Channel Connected Successfully!</div>';
-            });
+            let btn = document.getElementById('yt-connect-btn'); btn.innerText = "Connecting Google API Server...";
+            fetch('/customer/auth_youtube', { method: 'POST' }).then(res => res.json()).then(data => { location.reload(); });
         }
 
         function deleteCustomer(phoneNum) { if(confirm("Permanently delete?")) { fetch('/admin/delete_user', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({target_user: phoneNum}) }).then(res => res.json()).then(data => { alert(data.message); location.reload(); }); } }
@@ -248,11 +262,23 @@
         
         function setCategory() {
             let cat = document.getElementById('cat-search').value.trim(); if(!cat) { alert("Please select a category!"); return; }
-            fetch('/customer/set_category', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({category: cat}) })
-            .then(res => res.json()).then(data => {
-                document.getElementById('category-section').innerHTML = '<div class="success-badge" style="border-color: #00ffcc; color: #00ffcc;">🎯 Locked Niche: ' + cat.toUpperCase() + '<br><br>🤖 AI Automation Bot Engine Active!</div>';
-            });
+            fetch('/customer/set_category', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({category: cat}) }).then(res => res.json()).then(data => { location.reload(); });
         }
+
+        // 🔄 লাইভ এআই ট্র্যাকিং ডাটা ফেচিং
+        function fetchLiveAiTracking() {
+            if(document.getElementById('live-topic')) {
+                fetch('/get_live_ai_data')
+                .then(res => res.json()).then(data => {
+                    document.getElementById('live-topic').innerText = data.topic;
+                    document.getElementById('live-title').innerText = data.title;
+                    document.getElementById('live-time').innerText = data.upload_time;
+                    document.getElementById('live-status').innerText = data.status;
+                });
+            }
+        }
+        setInterval(fetchLiveAiTracking, 5000);
+        window.onload = fetchLiveAiTracking;
     </script>
 </body>
 </html>
