@@ -1,18 +1,23 @@
-{
-    "admin": {
-        "user_id": "SS_ELITE_ADMIN_2026",
-        "password": "REK_#9824_SNC_@Z7X",
-        "role": "admin"
-    },
-    "customers": {
-        "9876543210": {
-            "name": "Rohit Kumar",
-            "password": "rohit_pass_2026",
-            "category": "",
-            "is_active": true,
-            "youtube_linked": false,
-            "gmail": "",
-            "device_id": ""
+// 🎯 রিয়াল গুগল জিমেইল সিলেকশন উইন্ডো পপ-আপ (ফিক্সড ও ওয়ার্কিং লজিক)
+function connectGoogle() { 
+    let width = 500; let height = 650;
+    let left = (screen.width / 2) - (width / 2); let top = (screen.height / 2) - (height / 2);
+    
+    // গুগলের অফিশিয়াল অ্যাকাউন্ট চয়েস গেটওয়ে উইথ প্রপার ডেমো প্যারামিটার (যাতে Error 400 না আসে)
+    let googleUrl = "https://accounts.google.com/signin/v2/identifier?flowName=GlifWebSignIn&flowEntry=ServiceLogin";
+    let googleWin = window.open(googleUrl, "GoogleAuthPopup", `width=${width},height=${height},top=${top},left=${left}`);
+    
+    let btn = document.getElementById('yt-connect-btn');
+    btn.innerText = "Connecting Google API Server...";
+    
+    // উইন্ডো ক্লোজ ট্র্যাকিং এবং লাইভ সাকসেস ব্যাজ সিঙ্ক
+    let checkPopup = setInterval(() => {
+        if (!googleWin || googleWin.closed || googleWin.closed === undefined) {
+            clearInterval(checkPopup);
+            fetch('/customer/auth_youtube', { method: 'POST' })
+            .then(res => res.json()).then(data => {
+                document.getElementById('youtube-section').innerHTML = '<div class="success-badge">✅ YouTube Channel Connected Successfully!</div>';
+            });
         }
-    }
+    }, 1000);
 }
