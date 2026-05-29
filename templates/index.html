@@ -17,11 +17,13 @@
         .three-dots { font-size: 24px; color: #888; padding: 5px 10px; }
         .dropdown-menu { display: none; position: absolute; right: 0; top: 35px; background: #222; border: 1px solid #333; border-radius: 5px; width: 120px; z-index: 100; }
         .dropdown-menu a { color: #ff4444; padding: 10px; display: block; text-decoration: none; font-size: 14px; font-weight: bold; text-align: left; }
-        .client-card { background: #222; padding: 15px; margin: 15px 0; border-radius: 8px; text-align: left; border: 1px solid #333; }
+        .client-card { background: #222; padding: 15px; margin: 15px 0; border-radius: 8px; text-align: left; border: 1px solid #333; position: relative; }
         .action-btn { padding: 6px 12px; font-size: 11px; font-weight: bold; border: none; border-radius: 4px; cursor: pointer; margin-right: 5px; margin-top: 8px; float: right; color: white; }
         .btn-delete { background: #ff4444; }
         .btn-block { background: #ffaa00; color: black; }
         .btn-unblock { background: #00cc66; }
+        .btn-approve { background: #00cc66; color: white; }
+        .btn-reject { background: #ff4444; color: white; }
         .info-row { font-size: 13px; color: #aaa; margin: 4px 0; }
         .toggle-link { color: #00ffcc; cursor: pointer; text-decoration: underline; font-size: 14px; display: inline-block; margin-top: 15px; }
     </style>
@@ -52,18 +54,18 @@
                 <p style="color: #888;">Register as a New Customer</p>
                 <input type="text" id="reg-name" placeholder="Enter Your Full Name"><br>
                 <input type="text" id="reg-phone" placeholder="Enter Your Mobile Number"><br>
-                <input type="email" id="reg-gmail" placeholder="Enter Your Active Gmail ID"><br>
+                <input type="email" id="reg-gmail" placeholder="Enter Your Gmail ID"><br>
                 <input type="password" id="reg-pass" placeholder="Create Your Password"><br>
-                <button onclick="sendOtp()" style="background: #00cc66; color: white;">SEND VERIFICATION CODE</button>
+                <button onclick="submitForApproval()" style="background: #00cc66; color: white;">SIGN UP & REQUEST ACCESS</button>
                 <span class="toggle-link" onclick="toggleForm('login')">Already have an account? Login here</span>
             </div>
 
-            <div id="otp-form" style="display: none;">
-                <h2>✉️ Verify Your Gmail</h2>
-                <p style="color: #888;">We have sent a 4-digit OTP code to your Gmail.</p>
-                <input type="text" id="otp-code" placeholder="Enter 4-Digit OTP Code" maxlength="4" style="text-align: center; font-size: 20px; letter-spacing: 5px;"><br>
-                <button onclick="verifyOtp()" style="background: #00ffcc; color: black;">VERIFY & ENTER STUDIO</button>
-                <span class="toggle-link" onclick="backToRegister()">⬅️ Back to Edit Details</span>
+            <div id="processing-form" style="display: none;">
+                <h2 style="color: #ffaa00;">⏳ Wait Processing...</h2>
+                <p style="color: #aaa; font-size: 15px; padding: 10px;">Your registration request has been sent live to Platform Admin.</p>
+                <div style="margin: 20px 0; font-size: 14px; color: #00ffcc; font-weight: bold; animation: blink 1.5s infinite;">
+                    🔒 Keeping this page open. As soon as Admin approves, you will enter the studio automatically!
+                </div>
             </div>
             
             <div id="msg" style="margin-top: 15px; color: #00ffcc; font-weight: bold;"></div>
@@ -72,25 +74,45 @@
             <h2>👑 Admin Control Room</h2>
             <p style="color: #00ffcc;">Platform Owner Mode</p>
             <hr style="border-color: #333;">
-            <h4 style="text-align: left; margin-bottom: 5px; color: #00ffcc;">Live Registered Customers List:</h4>
+            
+            <h4 style="text-align: left; color: #ffaa00; margin-bottom: 5px;">⏳ Pending Approval Requests:</h4>
+            <div id="pending-list">
+                {% for phone, info in customers.items() %}
+                    {% if not info.is_approved %}
+                        <div class="client-card pending-box">
+                            <button class="action-btn btn-reject" onclick="handleApproval('{{ phone }}', 'reject')">❌ CROSS</button>
+                            <button class="action-btn btn-approve" onclick="handleApproval('{{ phone }}', 'approve')">✅ RIGHT</button>
+                            <strong>👤 Name: <span style="color: #ffaa00;">{{ info.name }}</span></strong><br>
+                            <div class="info-row">📞 <b>Mobile ID:</b> {{ phone }}</div>
+                            <div class="info-row">📧 <b>Gmail:</b> {{ info.gmail }}</div>
+                            <div class="info-row">🔑 <b>Set Pass:</b> {{ info.password }}</div>
+                            <div style="clear: both;"></div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+
+            <hr style="border-color: #333; margin: 20px 0;">
+            <h4 style="text-align: left; margin-bottom: 5px; color: #00ffcc;">Active Approved Customers List:</h4>
             <div id="client-list">
                 {% for phone, info in customers.items() %}
-                    <div class="client-card">
-                        {% if info.is_active %}
-                            <button class="action-btn btn-block" onclick="toggleStatus('{{ phone }}', 'block')">❌ BLOCK ID</button>
-                        {% else %}
-                            <button class="action-btn btn-unblock" onclick="toggleStatus('{{ phone }}', 'unblock')">✅ UNBLOCK ID</button>
-                        {% endif %}
-                        <button class="action-btn btn-delete" onclick="deleteCustomer('{{ phone }}')">🗑️ DELETE & KICK</button>
+                    {% if info.is_approved %}
+                        <div class="client-card">
+                            {% if info.is_active %}
+                                <button class="action-btn btn-block" onclick="toggleStatus('{{ phone }}', 'block')">❌ BLOCK ID</button>
+                            {% else %}
+                                <button class="action-btn btn-unblock" onclick="toggleStatus('{{ phone }}', 'unblock')">✅ UNBLOCK ID</button>
+                            {% endif %}
+                            <button class="action-btn btn-delete" onclick="deleteCustomer('{{ phone }}')">🗑️ DELETE & KICK</button>
 
-                        <strong>👤 Name: <span style="color: #00ffcc;">{{ info.name }}</span></strong> <br>
-                        <div class="info-row">📞 <b>Mobile ID:</b> {{ phone }}</div>
-                        <div class="info-row">📧 <b>Customer Gmail:</b> <span style="color: #00ffcc;">{{ info.gmail }}</span></div>
-                        <div class="info-row">🔑 <b>Password:</b> <span style="color: #ffcc00;">{{ info.password }}</span></div>
-                        <div class="info-row">🎯 <b>Category:</b> {{ info.category.upper() if info.category else 'NOT SET' }}</div>
-                        <div class="info-row">📊 <b>Status:</b> <span style="font-weight: bold; color: {{ '#00ffcc' if info.is_active else '#ff4444' }}">{{ 'ACTIVE' if info.is_active else 'BLOCKED' }}</span></div>
-                        <div style="clear: both;"></div>
-                    </div>
+                            <strong>👤 Name: <span style="color: #00ffcc;">{{ info.name }}</span></strong> <br>
+                            <div class="info-row">📞 <b>Mobile ID:</b> {{ phone }}</div>
+                            <div class="info-row">📧 <b>Gmail:</b> {{ info.gmail }}</div>
+                            <div class="info-row">🔑 <b>Password:</b> <span style="color: #ffcc00;">{{ info.password }}</span></div>
+                            <div class="info-row">🎯 <b>Category:</b> {{ info.category.upper() if info.category else 'NOT SET' }}</div>
+                            <div style="clear: both;"></div>
+                        </div>
+                    {% endif %}
                 {% endfor %}
             </div>
 
@@ -99,7 +121,6 @@
             <div style="text-align: left; background: #222; padding: 12px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #00ffcc;">
                 <p style="margin: 0; font-size: 16px;">👤 Name: <b>{{ name }}</b></p>
                 <p style="margin: 5px 0 0 0; font-size: 13px; color: #aaa;">📞 Mobile ID: <b>{{ username }}</b></p>
-                <p style="margin: 5px 0 0 0; font-size: 13px; color: #aaa;">📧 Verified Email: <b>{{ gmail_id }}</b></p>
             </div>
             <hr style="border-color: #333;">
             
@@ -108,7 +129,7 @@
                 <button class="google-btn" onclick="connectGoogle()">🔗 LINK YOUTUBE VIA GOOGLE</button>
                 <hr style="border-color: #333; margin: 20px 0;">
             {% else %}
-                <p style="color: #00ffcc;">✅ YouTube & Gmail Connection Active!</p>
+                <p style="color: #00ffcc;">✅ YouTube Connection Active!</p>
             {% endif %}
 
             {% if not category %}
@@ -137,7 +158,7 @@
             {% else %}
                 <p>🎯 Your Locked Category: <strong style="color: #00ffcc;">{{ category.upper() }}</strong></p>
                 <div style="background: #222; padding: 15px; border-radius: 8px; margin: 20px 0; color: #00ffcc; font-weight: bold;">
-                    🤖 AI Bot is running securely. Automation updates will be sent directly to your linked Gmail!
+                    🤖 AI Bot is running securely. Automation updates will be synced live!
                 </div>
             {% endif %}
             <div id="msg" style="margin-top: 15px; color: #ffcc00; font-weight: bold;"></div>
@@ -145,24 +166,17 @@
     </div>
 
     <script>
-        let tempUserData = {};
+        let checkApprovalInterval = null;
+        let globalPendingPhone = "";
 
         function toggleForm(type) {
             if(type === 'register') {
                 document.getElementById('login-form').style.display = 'none';
                 document.getElementById('register-form').style.display = 'block';
-                document.getElementById('otp-form').style.display = 'none';
             } else {
                 document.getElementById('login-form').style.display = 'block';
                 document.getElementById('register-form').style.display = 'none';
-                document.getElementById('otp-form').style.display = 'none';
             }
-            document.getElementById('msg').innerText = "";
-        }
-
-        function backToRegister() {
-            document.getElementById('register-form').style.display = 'block';
-            document.getElementById('otp-form').style.display = 'none';
             document.getElementById('msg').innerText = "";
         }
 
@@ -180,43 +194,51 @@
             .then(res => res.json()).then(data => { document.getElementById('msg').innerText = data.message; if(data.status === "SUCCESS") { setTimeout(() => { location.reload(); }, 1000); } });
         }
 
-        function sendOtp() {
+        function submitForApproval() {
             let n = document.getElementById('reg-name').value.trim();
             let ph = document.getElementById('reg-phone').value.trim();
             let gm = document.getElementById('reg-gmail').value.trim();
             let pa = document.getElementById('reg-pass').value.trim();
+            let devId = getDeviceID();
             
-            if(!n || !ph || !gm || !pa) { alert("Please fill up all fields!"); return; }
-            if(!gm.includes('@')) { alert("Please enter a valid Gmail ID!"); return; }
+            if(!n || !ph || !gm || !pa) { alert("Please fill up all 4 fields!"); return; }
+            globalPendingPhone = ph;
             
-            document.getElementById('msg').innerText = "Sending Verification OTP Code to your Gmail...";
-            tempUserData = { name: n, phone: ph, gmail: gm, password: pa, device_id: getDeviceID() };
-            
-            fetch('/request_otp', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({gmail: gm, phone: ph}) })
+            fetch('/register_request', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({name: n, phone: ph, gmail: gm, password: pa, device_id: devId}) })
             .then(res => res.json()).then(data => {
-                document.getElementById('msg').innerText = data.message;
                 if(data.status === "SUCCESS") {
                     document.getElementById('register-form').style.display = 'none';
-                    document.getElementById('otp-form').style.display = 'block';
+                    document.getElementById('processing-form').style.display = 'block';
+                    checkApprovalInterval = setInterval(pollApprovalStatus, 3000);
+                } else {
+                    document.getElementById('msg').innerText = data.message;
                 }
             });
         }
 
-        function verifyOtp() {
-            let code = document.getElementById('otp-code').value.trim();
-            if(code.length !== 4) { alert("Enter 4-digit code!"); return; }
-            document.getElementById('msg').innerText = "Verifying code...";
-            
-            fetch('/verify_otp', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({otp: code, user_data: tempUserData}) })
+        function pollApprovalStatus() {
+            fetch('/check_approval_status', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({phone: globalPendingPhone}) })
             .then(res => res.json()).then(data => {
-                document.getElementById('msg').innerText = data.message;
-                if(data.status === "SUCCESS") { setTimeout(() => { location.reload(); }, 1000); }
+                if(data.status === "APPROVED") {
+                    clearInterval(checkApprovalInterval);
+                    document.getElementById('msg').innerText = "🎉 Access Granted by Admin! Loading Studio...";
+                    setTimeout(() => { location.reload(); }, 1000);
+                } else if(data.status === "REJECTED") {
+                    clearInterval(checkApprovalInterval);
+                    alert("❌ Your request was rejected.");
+                    location.reload();
+                }
             });
+        }
+
+        function handleApproval(phoneNum, actionType) {
+            fetch('/admin/handle_request', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({target_user: phoneNum, action: actionType}) })
+            .then(res => res.json()).then(data => { alert(data.message); location.reload(); });
         }
 
         function connectGoogle() { fetch('/customer/auth_youtube', { method: 'POST' }).then(res => res.json()).then(data => { alert(data.message); location.reload(); }); }
         function deleteCustomer(phoneNum) {
-            if(confirm("Are you sure?")) {
+            if(confirm("Are you sure you want to permanently DELETE this customer?")) {
                 fetch('/admin/delete_user', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({target_user: phoneNum}) })
                 .then(res => res.json()).then(data => { alert(data.message); location.reload(); });
             }
@@ -227,5 +249,6 @@
             fetch('/customer/set_category', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({category: cat}) }).then(res => res.json()).then(data => { document.getElementById('msg').innerText = data.message; if(data.status === "SUCCESS") { setTimeout(() => { location.reload(); }, 1500); } });
         }
     </script>
+    <style> @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } } </style>
 </body>
 </html>
