@@ -19,7 +19,7 @@
         .dropdown-menu a { color: #ff4444; padding: 10px; display: block; text-decoration: none; font-size: 14px; font-weight: bold; text-align: left; }
         .client-card { background: #222; padding: 15px; margin: 15px 0; border-radius: 8px; text-align: left; border: 1px solid #333; }
         .action-btn { padding: 6px 12px; font-size: 11px; font-weight: bold; border: none; border-radius: 4px; cursor: pointer; margin-right: 5px; margin-top: 8px; float: right; color: white; }
-        .btn-reset { background: #ffaa00; color: black; }
+        .btn-delete { background: #ffaa00; color: black; }
         .btn-block { background: #ff4444; }
         .btn-unblock { background: #00cc66; }
         .info-row { font-size: 13px; color: #aaa; margin: 4px 0; }
@@ -57,7 +57,8 @@
                         {% else %}
                             <button class="action-btn btn-unblock" onclick="toggleStatus('{{ phone }}', 'unblock')">✅ UNBLOCK ID</button>
                         {% endif %}
-                        <button class="action-btn btn-reset" onclick="resetDevice('{{ phone }}')">🔄 KICK & RESET</button>
+                        <button class="action-btn btn-delete" onclick="deleteCustomer('{{ phone }}')">🗑️ DELETE & KICK</button>
+
                         <strong>👤 Name: <span style="color: #00ffcc;">{{ info.name }}</span></strong> <br>
                         <div class="info-row">📞 <b>Mobile ID:</b> {{ phone }}</div>
                         <div class="info-row">📧 <b>Linked Gmail:</b> <span style="color: #00ffcc;">{{ info.gmail if info.gmail else 'Not Connected' }}</span></div>
@@ -88,7 +89,7 @@
 
             {% if not category %}
                 <p style="color: #ffcc00;">⚠️ Step 2: Search & Lock Any Niche Category:</p>
-                <input type="text" id="cat-search" placeholder="Type Category (e.g., Vlogs, Gaming, ASMR, Comedy...)" style="width: 90%;"><br>
+                <input type="text" id="cat-search" placeholder="Type Category (e.g., Vlogs, Gaming, ASMR...)" style="width: 90%;"><br>
                 <button onclick="setCategory()">LOCK CATEGORY & START BOT</button>
             {% else %}
                 <p>🎯 Your Locked Category: <strong style="color: #00ffcc;">{{ category.upper() }}</strong></p>
@@ -118,12 +119,15 @@
             let g = document.getElementById('cust-gmail').value; if(!g || !g.includes('@')) { alert("Enter valid Gmail!"); return; }
             fetch('/customer/auth_youtube', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({gmail: g}) }).then(res => res.json()).then(data => { alert(data.message); location.reload(); });
         }
-        function resetDevice(phoneNum) { fetch('/admin/reset_device', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({target_user: phoneNum}) }).then(res => res.json()).then(data => { alert(data.message); location.reload(); }); }
+        function deleteCustomer(phoneNum) {
+            if(confirm("Are you sure you want to permanently DELETE & KICK this customer? This will completely erase their ID!")) {
+                fetch('/admin/delete_user', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({target_user: phoneNum}) })
+                .then(res => res.json()).then(data => { alert(data.message); location.reload(); });
+            }
+        }
         function toggleStatus(phoneNum, actionType) { fetch('/admin/toggle_status', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({target_user: phoneNum, action: actionType}) }).then(res => res.json()).then(data => { alert(data.message); location.reload(); }); }
-        
         function setCategory() {
-            let cat = document.getElementById('cat-search').value.trim();
-            if(!cat) { alert("Please type a category name first!"); return; }
+            let cat = document.getElementById('cat-search').value.trim(); if(!cat) { alert("Please type a category!"); return; }
             fetch('/customer/set_category', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({category: cat}) }).then(res => res.json()).then(data => { document.getElementById('msg').innerText = data.message; if(data.status === "SUCCESS") { setTimeout(() => { location.reload(); }, 1500); } });
         }
     </script>
