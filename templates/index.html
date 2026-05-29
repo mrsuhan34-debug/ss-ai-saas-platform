@@ -10,7 +10,6 @@
         h2 { color: #00ffcc; margin-bottom: 5px; }
         input { padding: 12px; margin: 10px 0; width: 100%; border-radius: 8px; border: 1px solid #333; background: #0f0f12; color: #fff; box-sizing: border-box; padding-right: 45px; }
         
-        /* 👁️ পাসওয়ার্ড বক্স এবং চোখের বাটনের ১০০% ওয়ার্কিং স্টাইল */
         .pass-wrapper { position: relative; width: 100%; }
         .eye-icon { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #888; font-size: 20px; user-select: none; z-index: 10; }
         
@@ -27,12 +26,9 @@
         .btn-delete { background: #ff4444; }
         .btn-block { background: #ffaa00; color: black; }
         .btn-unblock { background: #00cc66; }
-        .btn-approve { background: #00cc66; color: white; }
-        .btn-reject { background: #ff4444; color: white; }
         .info-row { font-size: 13px; color: #aaa; margin: 4px 0; }
         .toggle-link { color: #00ffcc; cursor: pointer; text-decoration: underline; font-size: 14px; display: inline-block; margin-top: 15px; }
         
-        /* 🎯 ইউটিউব স্টাইল লাইভ সার্চ ড্রপডাউন বক্স */
         .search-container { position: relative; width: 100%; text-align: left; margin-top: 10px; }
         .suggestion-box { position: absolute; top: 100%; left: 0; width: 100%; background: #1f1f2e; border: 1px solid #333; border-radius: 8px; max-height: 180px; overflow-y: auto; z-index: 9999; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.6); box-sizing: border-box; }
         .suggestion-item { padding: 11px 15px; cursor: pointer; color: #e0e0e0; border-bottom: 1px solid #2a2a3a; font-size: 13.5px; text-align: left; }
@@ -56,9 +52,9 @@
             <div id="login-form">
                 <h2>🚀 SS-AI SaaS Platform</h2>
                 <p style="color: #888;">Secure Login Gateway</p>
-                <input type="text" id="user" placeholder="Enter Mobile Number / Admin ID"><br>
+                <input type="text" id="user" placeholder="Enter Mobile Number / Admin ID" autocomplete="off"><br>
                 <div class="pass-wrapper">
-                    <input type="password" id="pass" placeholder="Enter Password">
+                    <input type="password" id="pass" placeholder="Enter Password" autocomplete="new-password">
                     <span class="eye-icon" onclick="togglePasswordVisibility('pass')">👁️</span>
                 </div>
                 <button onclick="login()">SECURE LOGIN</button>
@@ -68,11 +64,11 @@
             <div id="register-form" style="display: none;">
                 <h2>🎨 Create AI Studio Account</h2>
                 <p style="color: #888;">Register as a New Customer</p>
-                <input type="text" id="reg-name" placeholder="Enter Your Full Name"><br>
-                <input type="text" id="reg-phone" placeholder="Enter Your Mobile Number"><br>
-                <input type="email" id="reg-gmail" placeholder="Enter Your Gmail ID"><br>
+                <input type="text" id="reg-name" placeholder="Enter Your Full Name" autocomplete="off"><br>
+                <input type="text" id="reg-phone" placeholder="Enter Your Mobile Number" autocomplete="off"><br>
+                <input type="email" id="reg-gmail" placeholder="Enter Your Gmail ID" autocomplete="off"><br>
                 <div class="pass-wrapper">
-                    <input type="password" id="reg-pass" placeholder="Create Your Password">
+                    <input type="password" id="reg-pass" placeholder="Create Your Password" autocomplete="new-password">
                     <span class="eye-icon" onclick="togglePasswordVisibility('reg-pass')">👁️</span>
                 </div>
                 <button onclick="submitForApproval()" style="background: #00cc66; color: white;">SIGN UP & REQUEST ACCESS</button>
@@ -166,13 +162,11 @@
     </div>
 
     <script>
-        // 👁️ চোখের বোতাম টিপলে পাসওয়ার্ড শো/হাইড করার ১০০% কার্যকরী জাভাস্ক্রিপ্ট
         function togglePasswordVisibility(fieldId) {
             let field = document.getElementById(fieldId);
             if (field.type === "password") { field.type = "text"; } else { field.type = "password"; }
         }
 
-        // 🌍 মেগা ক্যাটাগরি ডাটাবেস (ডকুমেন্টরি, এআই ভিডিও সহ সমস্ত ইউটিউব নিশ যুক্ত)
         const ytCategories = [
             "Film & Animation", "Music Niche (Lo-Fi Beats, Remixes)", "Gaming Niche (Hulk AI Animations)", 
             "Gaming Niche (Free Fire Trends & Live)", "Gaming Niche (PUBG/BGMI Custom)", "Comedy Vines & Short Roasts", 
@@ -182,7 +176,6 @@
             "Movie Explanations & Recaps (Bengali)", "Toy Review & Kids Stories Niche", "Title AI Niche & Keywords Automation"
         ];
 
-        // 🎯 লাইভ সার্চ ফিল্টার ড্রপডাউন লজিক
         function filterCategories() {
             let input = document.getElementById('cat-search').value.toLowerCase();
             let box = document.getElementById('suggestion-box');
@@ -205,7 +198,6 @@
             } else { box.style.display = 'none'; }
         }
 
-        // বাইরে ক্লিক করলে ড্রপডাউন বন্ধ করা
         document.addEventListener('click', function(e){
             let searchInput = document.getElementById('cat-search');
             let sugBox = document.getElementById('suggestion-box');
@@ -240,27 +232,31 @@
 
         function handleApproval(phoneNum, actionType) { fetch('/admin/handle_request', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({target_user: phoneNum, action: actionType}) }).then(res => res.json()).then(data => { alert(data.message); location.reload(); }); }
         
-        // 🎯 ওয়ান-ক্লিক জিমেইল অথ লাইভ সাকসেস বাটন সিঙ্ক
+        // 🎯 গুগল জিমেইল ক্লিক লজিক (অটোমেটিক হওয়া বন্ধ করা হলো)
         function connectGoogle() { 
             let btn = document.getElementById('yt-connect-btn');
-            btn.innerText = "Connecting Google Accounts...";
+            btn.innerText = "Connecting Google API Server...";
             
-            setTimeout(() => {
-                fetch('/customer/auth_youtube', { method: 'POST' })
-                .then(res => res.json()).then(data => {
+            // রিয়াল রিকোয়েস্ট সাবমিশন
+            fetch('/customer/auth_youtube', { method: 'POST' })
+            .then(res => res.json()).then(data => {
+                if(data.status === "SUCCESS") {
                     document.getElementById('youtube-section').innerHTML = '<div class="success-badge">✅ YouTube Channel Connected Successfully!</div>';
-                });
-            }, 800);
+                }
+            });
         }
 
         function deleteCustomer(phoneNum) { if(confirm("Permanently delete?")) { fetch('/admin/delete_user', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({target_user: phoneNum}) }).then(res => res.json()).then(data => { alert(data.message); location.reload(); }); } }
         function toggleStatus(phoneNum, actionType) { fetch('/admin/toggle_status', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({target_user: phoneNum, action: actionType}) }).then(res => res.json()).then(data => { alert(data.message); location.reload(); }); }
         
+        // 🎯 ক্যাটাগরি লক লজিক (ক্লিকের পর সাকসেস দেখাবে)
         function setCategory() {
             let cat = document.getElementById('cat-search').value.trim(); if(!cat) { alert("Please select a category!"); return; }
             fetch('/customer/set_category', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({category: cat}) })
             .then(res => res.json()).then(data => {
-                document.getElementById('category-section').innerHTML = '<div class="success-badge" style="border-color: #00ffcc; color: #00ffcc;">🎯 Locked Niche: ' + cat.toUpperCase() + '<br><br>🤖 AI Automation Bot Engine Active!</div>';
+                if(data.status === "SUCCESS") {
+                    document.getElementById('category-section').innerHTML = '<div class="success-badge" style="border-color: #00ffcc; color: #00ffcc;">🎯 Locked Niche: ' + cat.toUpperCase() + '<br><br>🤖 AI Automation Bot Engine Active!</div>';
+                }
             });
         }
     </script>
