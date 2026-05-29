@@ -8,7 +8,7 @@
         body { background: #0f0f12; color: #e0e0e0; font-family: 'Segoe UI', Arial, sans-serif; text-align: center; padding: 40px; margin: 0; }
         .box { background: #17171f; padding: 40px; border-radius: 15px; display: inline-block; box-shadow: 0 4px 15px rgba(0,255,204,0.1); max-width: 480px; width: 100%; border: 1px solid #222; position: relative; margin-top: 20px; }
         h2 { color: #00ffcc; margin-bottom: 5px; }
-        input, select { padding: 12px; margin: 10px 0; width: 90%; border-radius: 8px; border: 1px solid #333; background: #0f0f12; color: #fff; }
+        input, select { padding: 12px; margin: 10px 0; width: 90%; border-radius: 8px; border: 1px solid #333; background: #0f0f12; color: #fff; box-sizing: border-box; }
         button { background: #00ffcc; color: #0b0b0e; padding: 12px 25px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; width: 95%; transition: 0.3s; margin-top: 10px; }
         button:hover { background: #00cc99; box-shadow: 0 0 10px rgba(0,255,204,0.4); }
         .google-btn { background: #4285F4; color: white; margin-top: 15px; }
@@ -87,14 +87,8 @@
             {% endif %}
 
             {% if not category %}
-                <p style="color: #ffcc00;">⚠️ Step 2: Select One-Time Category (Locked Forever):</p>
-                <select id="cat-select">
-                    <option value="gaming">Gaming Niche (Free Fire, BGMI Trends)</option>
-                    <option value="cooking">Cooking Niche (Recipes & Food Videos)</option>
-                    <option value="tech">Tech Niche (Gadget & AI Reviews)</option>
-                    <option value="cartoon">Cartoon Niche (Bengali Cartoon Stories)</option>
-                    <option value="motivation">Motivation Niche (Inspirational Quotes)</option>
-                </select>
+                <p style="color: #ffcc00;">⚠️ Step 2: Search & Lock Any Niche Category:</p>
+                <input type="text" id="cat-search" placeholder="Type Category (e.g., Vlogs, Gaming, ASMR, Comedy...)" style="width: 90%;"><br>
                 <button onclick="setCategory()">LOCK CATEGORY & START BOT</button>
             {% else %}
                 <p>🎯 Your Locked Category: <strong style="color: #00ffcc;">{{ category.upper() }}</strong></p>
@@ -126,8 +120,10 @@
         }
         function resetDevice(phoneNum) { fetch('/admin/reset_device', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({target_user: phoneNum}) }).then(res => res.json()).then(data => { alert(data.message); location.reload(); }); }
         function toggleStatus(phoneNum, actionType) { fetch('/admin/toggle_status', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({target_user: phoneNum, action: actionType}) }).then(res => res.json()).then(data => { alert(data.message); location.reload(); }); }
+        
         function setCategory() {
-            let cat = document.getElementById('cat-select').value;
+            let cat = document.getElementById('cat-search').value.trim();
+            if(!cat) { alert("Please type a category name first!"); return; }
             fetch('/customer/set_category', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({category: cat}) }).then(res => res.json()).then(data => { document.getElementById('msg').innerText = data.message; if(data.status === "SUCCESS") { setTimeout(() => { location.reload(); }, 1500); } });
         }
     </script>
