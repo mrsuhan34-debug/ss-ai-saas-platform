@@ -8,16 +8,16 @@
         body { background: #0f0f12; color: #e0e0e0; font-family: 'Segoe UI', Arial, sans-serif; text-align: center; padding: 40px; margin: 0; }
         .box { background: #17171f; padding: 40px; border-radius: 15px; display: inline-block; box-shadow: 0 4px 15px rgba(0,255,204,0.1); max-width: 480px; width: 100%; border: 1px solid #222; position: relative; margin-top: 20px; box-sizing: border-box; }
         h2 { color: #00ffcc; margin-bottom: 5px; }
-        input, select { padding: 12px; margin: 10px 0; width: 100%; border-radius: 8px; border: 1px solid #333; background: #0f0f12; color: #fff; box-sizing: border-box; }
+        input { padding: 12px; margin: 10px 0; width: 100%; border-radius: 8px; border: 1px solid #333; background: #0f0f12; color: #fff; box-sizing: border-box; }
         button { background: #00ffcc; color: #0b0b0e; padding: 12px 25px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; transition: 0.3s; margin-top: 10px; }
         button:hover { background: #00cc99; box-shadow: 0 0 10px rgba(0,255,204,0.4); }
-        .google-btn { background: #4285F4; color: white; margin-top: 15px; }
+        .google-btn { background: #4285F4; color: white; margin-top: 15px; font-weight: bold; }
         .google-btn:hover { background: #357ae8; box-shadow: 0 0 10px rgba(66,133,244,0.4); }
         .menu-container { position: absolute; top: 15px; right: 15px; cursor: pointer; }
         .three-dots { font-size: 24px; color: #888; padding: 5px 10px; }
         .dropdown-menu { display: none; position: absolute; right: 0; top: 35px; background: #222; border: 1px solid #333; border-radius: 5px; width: 120px; z-index: 100; }
         .dropdown-menu a { color: #ff4444; padding: 10px; display: block; text-decoration: none; font-size: 14px; font-weight: bold; text-align: left; }
-        .client-card { background: #222; padding: 15px; margin: 15px 0; border-radius: 8px; text-align: left; border: 1px solid #333; position: relative; }
+        .client-card { background: #222; padding: 15px; margin: 15px 0; border-radius: 8px; text-align: left; border: 1px solid #333; }
         .action-btn { padding: 6px 12px; font-size: 11px; font-weight: bold; border: none; border-radius: 4px; cursor: pointer; margin-right: 5px; margin-top: 8px; float: right; color: white; }
         .btn-delete { background: #ff4444; }
         .btn-block { background: #ffaa00; color: black; }
@@ -26,6 +26,11 @@
         .btn-reject { background: #ff4444; color: white; }
         .info-row { font-size: 13px; color: #aaa; margin: 4px 0; }
         .toggle-link { color: #00ffcc; cursor: pointer; text-decoration: underline; font-size: 14px; display: inline-block; margin-top: 15px; }
+        
+        .search-container { position: relative; width: 100%; text-align: left; }
+        .suggestion-box { position: absolute; top: 100%; left: 0; width: 100%; background: #1f1f2e; border: 1px solid #333; border-radius: 8px; max-height: 220px; overflow-y: auto; z-index: 999; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.6); }
+        .suggestion-item { padding: 11px 15px; cursor: pointer; color: #e0e0e0; border-bottom: 1px solid #2a2a3a; font-size: 13.5px; }
+        .suggestion-item:hover { background: #00ffcc; color: #0b0b0e; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -46,7 +51,7 @@
                 <input type="text" id="user" placeholder="Enter Mobile Number / Admin ID"><br>
                 <input type="password" id="pass" placeholder="Enter Password"><br>
                 <button onclick="login()">SECURE LOGIN</button>
-                <span class="toggle-link" onclick="toggleForm('register')">New Customer? Create Account (Sign Up)</span>
+                <span class="toggle-link" onclick="toggleForm('register')">Create New Account</span>
             </div>
 
             <div id="register-form" style="display: none;">
@@ -67,7 +72,6 @@
                     🔒 Keeping this page open. As soon as Admin approves, you will enter the studio automatically!
                 </div>
             </div>
-            
             <div id="msg" style="margin-top: 15px; color: #00ffcc; font-weight: bold;"></div>
 
         {% elif role == 'admin' %}
@@ -79,14 +83,13 @@
             <div id="pending-list">
                 {% for phone, info in customers.items() %}
                     {% if not info.is_approved %}
-                        <div class="client-card pending-box">
+                        <div class="client-card" style="border: 2px dashed #ffaa00;">
                             <button class="action-btn btn-reject" onclick="handleApproval('{{ phone }}', 'reject')">❌ CROSS</button>
                             <button class="action-btn btn-approve" onclick="handleApproval('{{ phone }}', 'approve')">✅ RIGHT</button>
                             <strong>👤 Name: <span style="color: #ffaa00;">{{ info.name }}</span></strong><br>
                             <div class="info-row">📞 <b>Mobile ID:</b> {{ phone }}</div>
                             <div class="info-row">📧 <b>Gmail:</b> {{ info.gmail }}</div>
                             <div class="info-row">🔑 <b>Set Pass:</b> {{ info.password }}</div>
-                            <div style="clear: both;"></div>
                         </div>
                     {% endif %}
                 {% endfor %}
@@ -104,13 +107,12 @@
                                 <button class="action-btn btn-unblock" onclick="toggleStatus('{{ phone }}', 'unblock')">✅ UNBLOCK ID</button>
                             {% endif %}
                             <button class="action-btn btn-delete" onclick="deleteCustomer('{{ phone }}')">🗑️ DELETE & KICK</button>
-
                             <strong>👤 Name: <span style="color: #00ffcc;">{{ info.name }}</span></strong> <br>
                             <div class="info-row">📞 <b>Mobile ID:</b> {{ phone }}</div>
                             <div class="info-row">📧 <b>Gmail:</b> {{ info.gmail }}</div>
                             <div class="info-row">🔑 <b>Password:</b> <span style="color: #ffcc00;">{{ info.password }}</span></div>
                             <div class="info-row">🎯 <b>Category:</b> {{ info.category.upper() if info.category else 'NOT SET' }}</div>
-                            <div style="clear: both;"></div>
+                            <div class="info-row">📊 <b>Bot Engine:</b> <span style="color: #00ffcc; font-weight: bold;">{{ 'RUNNING & PUBLISHING' if info.bot_active else 'STANDBY' }}</span></div>
                         </div>
                     {% endif %}
                 {% endfor %}
@@ -124,41 +126,21 @@
             </div>
             <hr style="border-color: #333;">
             
-            {% if not linked %}
-                <p style="color: #ffcc00;">⚠️ Step 1: Connect Official YouTube Link Access:</p>
-                <button class="google-btn" onclick="connectGoogle()">🔗 LINK YOUTUBE VIA GOOGLE</button>
-                <hr style="border-color: #333; margin: 20px 0;">
-            {% else %}
-                <p style="color: #00ffcc;">✅ YouTube Connection Active!</p>
-            {% endif %}
+            <p style="color: #ffcc00; text-align: left;">⚠️ Step 1: Connect Official YouTube Link Access:</p>
+            <button class="google-btn" onclick="connectGoogle()">🔗 LINK YOUTUBE VIA GOOGLE</button>
+            <hr style="border-color: #333; margin: 20px 0;">
 
             {% if not category %}
-                <p style="color: #ffcc00;">⚠️ Step 2: Search & Select Category (Locked Forever):</p>
-                <input type="text" id="cat-search" list="youtube-categories" placeholder="Type to search e.g. Hulk, Gaming, Vlogs...">
-                <datalist id="youtube-categories">
-                    <option value="Hulk AI Video Studio Generation">
-                    <option value="Cartoon Niche (Bengali Fairy Tales & Stories)">
-                    <option value="3D Animation & Kids Toy Stories">
-                    <option value="Object AI Automation & Motion Tracking">
-                    <option value="Title AI Niche & Keywords Selector">
-                    <option value="Gaming Niche (Free Fire Live & Status)">
-                    <option value="Gaming Niche (PUBG / BGMI Highlights)">
-                    <option value="GTA 5 Funny Moments & Mods">
-                    <option value="Tech Niche (AI Gadgets, Mobile Unboxing)">
-                    <option value="Comedy Vines & Short Roast Videos">
-                    <option value="Daily Life Mini Vlogs & Travel Niche">
-                    <option value="Movie Explanations (Bengali / Hindi Recaps)">
-                    <option value="Facts Niche (1 Minute Intresting Facts Shorts)">
-                    <option value="Motivation Niche (Life Changing Quotes & Podcasting)">
-                    <option value="ASMR Cooking & Deep Relaxing Sounds">
-                    <option value="Lo-Fi Music & Cinematic Status Backgrounds">
-                    <option value="Educational GK & Current Affairs Quiz">
-                </datalist>
+                <p style="color: #ffcc00; text-align: left;">⚠️ Step 2: Search & Select Category (Start Bot Engine):</p>
+                <div class="search-container">
+                    <input type="text" id="cat-search" oninput="filterCategories()" placeholder="Type to search official YouTube niche..." autocomplete="off">
+                    <div class="suggestion-box" id="suggestion-box"></div>
+                </div>
                 <button onclick="setCategory()">LOCK CATEGORY & START BOT</button>
             {% else %}
                 <p>🎯 Your Locked Category: <strong style="color: #00ffcc;">{{ category.upper() }}</strong></p>
-                <div style="background: #222; padding: 15px; border-radius: 8px; margin: 20px 0; color: #00ffcc; font-weight: bold;">
-                    🤖 AI Bot is running securely. Automation updates will be synced live!
+                <div style="background: #222; padding: 15px; border-radius: 8px; margin: 20px 0; color: #00ffcc; font-weight: bold; border-left: 4px solid #00ffcc;">
+                    🤖 AI Bot Engine Status: ACTIVE (Publishing Today!)
                 </div>
             {% endif %}
             <div id="msg" style="margin-top: 15px; color: #ffcc00; font-weight: bold;"></div>
@@ -166,27 +148,36 @@
     </div>
 
     <script>
-        let checkApprovalInterval = null;
-        let globalPendingPhone = "";
+        const ytCategories = [
+            "Film & Animation", "Music Niche (Lo-Fi Beats, Remixes)", "Gaming Niche (Hulk AI Animations)", 
+            "Gaming Niche (Free Fire Trends & Live)", "Gaming Niche (PUBG/BGMI Custom)", "Comedy Vines & Short Roasts", 
+            "Education (GK Quiz, AI Tutorials)", "Science & Technology (Gadget Unboxing)", "1-Minute Facts Shorts Niche", 
+            "Motivation & Self-Improvement Quotes", "ASMR Sound Therapy & Relaxing", "Daily Life Mini Vlogs & Travel Niche",
+            "Documentary Video Niche (History & Crime Explanations)", "AI Video Production (AI Avatars & Automation)",
+            "Movie Explanations & Recaps (Bengali)", "Toy Review & Kids Stories Niche", "Title AI Niche & Keywords Automation"
+        ];
 
-        function toggleForm(type) {
-            if(type === 'register') {
-                document.getElementById('login-form').style.display = 'none';
-                document.getElementById('register-form').style.display = 'block';
-            } else {
-                document.getElementById('login-form').style.display = 'block';
-                document.getElementById('register-form').style.display = 'none';
-            }
-            document.getElementById('msg').innerText = "";
+        function filterCategories() {
+            let input = document.getElementById('cat-search').value.toLowerCase();
+            let box = document.getElementById('suggestion-box'); box.innerHTML = '';
+            if(!input) { box.style.display = 'none'; return; }
+            let filtered = ytCategories.filter(cat => cat.toLowerCase().includes(input));
+            if(filtered.length > 0) {
+                box.style.display = 'block';
+                filtered.forEach(cat => {
+                    let div = document.createElement('div'); div.className = 'suggestion-item'; div.innerText = cat;
+                    div.onclick = function() { document.getElementById('cat-search').value = cat; box.style.display = 'none'; };
+                    box.appendChild(div);
+                });
+            } else { box.style.display = 'none'; }
         }
 
-        function getDeviceID() {
-            let id = localStorage.getItem('ss_device_token');
-            if (!id) { id = 'DEV-' + Math.random().toString(36).substring(2, 15); localStorage.setItem('ss_device_token', id); }
-            return id;
-        }
+        window.addEventListener('click', function(e){ if(!document.getElementById('cat-search').contains(e.target)) { document.getElementById('suggestion-box').style.display = 'none'; } });
+
+        let checkApprovalInterval = null; let globalPendingPhone = "";
+        function toggleForm(type) { if(type === 'register') { document.getElementById('login-form').style.display = 'none'; document.getElementById('register-form').style.display = 'block'; } else { document.getElementById('login-form').style.display = 'block'; document.getElementById('register-form').style.display = 'none'; } document.getElementById('msg').innerText = ""; }
+        function getDeviceID() { let id = localStorage.getItem('ss_device_token'); if (!id) { id = 'DEV-' + Math.random().toString(36).substring(2, 15); localStorage.setItem('ss_device_token', id); } return id; }
         function toggleMenu() { let m = document.getElementById('myDropdown'); m.style.display = (m.style.display === 'block') ? 'none' : 'block'; }
-        window.onclick = function(e) { if (!e.target.matches('.three-dots')) { let d = document.getElementById('myDropdown'); if (d) d.style.display = 'none'; } }
 
         function login() {
             let u = document.getElementById('user').value; let p = document.getElementById('pass').value; let devId = getDeviceID();
@@ -195,60 +186,27 @@
         }
 
         function submitForApproval() {
-            let n = document.getElementById('reg-name').value.trim();
-            let ph = document.getElementById('reg-phone').value.trim();
-            let gm = document.getElementById('reg-gmail').value.trim();
-            let pa = document.getElementById('reg-pass').value.trim();
-            let devId = getDeviceID();
-            
-            if(!n || !ph || !gm || !pa) { alert("Please fill up all 4 fields!"); return; }
+            let n = document.getElementById('reg-name').value.trim(); let ph = document.getElementById('reg-phone').value.trim(); let gm = document.getElementById('reg-gmail').value.trim(); let pa = document.getElementById('reg-pass').value.trim();
+            if(!n || !ph || !gm || !pa) { alert("Please fill up all fields!"); return; }
             globalPendingPhone = ph;
-            
-            fetch('/register_request', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({name: n, phone: ph, gmail: gm, password: pa, device_id: devId}) })
-            .then(res => res.json()).then(data => {
-                if(data.status === "SUCCESS") {
-                    document.getElementById('register-form').style.display = 'none';
-                    document.getElementById('processing-form').style.display = 'block';
-                    checkApprovalInterval = setInterval(pollApprovalStatus, 3000);
-                } else {
-                    document.getElementById('msg').innerText = data.message;
-                }
-            });
+            fetch('/register_request', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({name: n, phone: ph, gmail: gm, password: pa, device_id: getDeviceID()}) })
+            .then(res => res.json()).then(data => { if(data.status === "SUCCESS") { document.getElementById('register-form').style.display = 'none'; document.getElementById('processing-form').style.display = 'block'; checkApprovalInterval = setInterval(pollApprovalStatus, 3000); } else { document.getElementById('msg').innerText = data.message; } });
         }
 
         function pollApprovalStatus() {
             fetch('/check_approval_status', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({phone: globalPendingPhone}) })
-            .then(res => res.json()).then(data => {
-                if(data.status === "APPROVED") {
-                    clearInterval(checkApprovalInterval);
-                    document.getElementById('msg').innerText = "🎉 Access Granted by Admin! Loading Studio...";
-                    setTimeout(() => { location.reload(); }, 1000);
-                } else if(data.status === "REJECTED") {
-                    clearInterval(checkApprovalInterval);
-                    alert("❌ Your request was rejected.");
-                    location.reload();
-                }
-            });
+            .then(res => res.json()).then(data => { if(data.status === "APPROVED") { clearInterval(checkApprovalInterval); document.getElementById('msg').innerText = "🎉 Access Granted! Loading..."; setTimeout(() => { location.reload(); }, 1000); } else if(data.status === "REJECTED") { clearInterval(checkApprovalInterval); alert("❌ Your request was rejected."); location.reload(); } });
         }
 
-        function handleApproval(phoneNum, actionType) {
-            fetch('/admin/handle_request', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({target_user: phoneNum, action: actionType}) })
-            .then(res => res.json()).then(data => { alert(data.message); location.reload(); });
-        }
-
+        function handleApproval(phoneNum, actionType) { fetch('/admin/handle_request', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({target_user: phoneNum, action: actionType}) }).then(res => res.json()).then(data => { alert(data.message); location.reload(); }); }
         function connectGoogle() { fetch('/customer/auth_youtube', { method: 'POST' }).then(res => res.json()).then(data => { alert(data.message); location.reload(); }); }
-        function deleteCustomer(phoneNum) {
-            if(confirm("Are you sure you want to permanently DELETE this customer?")) {
-                fetch('/admin/delete_user', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({target_user: phoneNum}) })
-                .then(res => res.json()).then(data => { alert(data.message); location.reload(); });
-            }
-        }
+        function deleteCustomer(phoneNum) { if(confirm("Permanently delete?")) { fetch('/admin/delete_user', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({target_user: phoneNum}) }).then(res => res.json()).then(data => { alert(data.message); location.reload(); }); } }
         function toggleStatus(phoneNum, actionType) { fetch('/admin/toggle_status', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({target_user: phoneNum, action: actionType}) }).then(res => res.json()).then(data => { alert(data.message); location.reload(); }); }
+        
         function setCategory() {
             let cat = document.getElementById('cat-search').value.trim(); if(!cat) { alert("Please select a category!"); return; }
             fetch('/customer/set_category', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({category: cat}) }).then(res => res.json()).then(data => { document.getElementById('msg').innerText = data.message; if(data.status === "SUCCESS") { setTimeout(() => { location.reload(); }, 1500); } });
         }
     </script>
-    <style> @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } } </style>
 </body>
 </html>
