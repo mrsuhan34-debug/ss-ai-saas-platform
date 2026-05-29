@@ -61,12 +61,10 @@ def login():
     client_device = data.get('device_id', '')
     db = load_db()
     
-    # 👑 অ্যাডমিন লগইন
     if username == db["admin"]["user_id"] and password == db["admin"]["password"]:
         session.permanent = True; session['username'] = "Owner"; session['role'] = "admin"
         return jsonify({"status": "SUCCESS", "message": "👑 Admin verified! Access granted."})
         
-    # 🎨 কাস্টমার ডাইরেক্ট লগইন (কোনো ওটিপি ছাড়া)
     if username in db["customers"] and db["customers"][username]["password"] == password:
         user_data = db["customers"][username]
         if not user_data.get('is_active', True): return jsonify({"status": "ERROR", "message": "🛑 LOGIN DENIED: Account is BLOCKED!"})
@@ -76,6 +74,34 @@ def login():
         session.permanent = True; session['username'] = username; session['role'] = "customer"
         return jsonify({"status": "SUCCESS", "message": "Login Successful!"})
     return jsonify({"status": "ERROR", "message": "Access Denied: Invalid Credentials!"})
+
+# 📝 কাস্টমার যখন নিজে বাইরে থেকে সাইন-আপ করবে, এই রাউট কাজ করবে
+@app.route('/register', methods=['POST'])
+def register():
+    data = request.json
+    name = data.get('name', '').strip()
+    phone = data.get('phone', '').strip()
+    password = data.get('password', '').strip()
+    
+    if not phone or not name or not password:
+        return jsonify({"status": "ERROR", "message": "All fields are required!"})
+        
+    db = load_db()
+    if phone in db["customers"]:
+        return jsonify({"status": "ERROR", "message": "🛑 This Number is already registered! Go to Login."})
+        
+    # অটোমেটিক কাস্টমারের ডেটা ডাটাবেসে সেভ হয়ে যাওয়া
+    db["customers"][phone] = {
+        "name": name,
+        "password": password,
+        "category": "",
+        "is_active": True,
+        "youtube_linked": False,
+        "gmail": "",
+        "device_id": ""
+    }
+    save_db(db)
+    return jsonify({"status": "SUCCESS", "message": "🎉 Account Created Successfully! Now you can Login."})
 
 @app.route('/customer/auth_youtube', methods=['POST'])
 def auth_youtube():
@@ -92,7 +118,7 @@ def set_category():
     db = load_db(); username = session['username']
     db["customers"][username]["category"] = selected_cat; user_data = db["customers"][username]; save_db(db)
     if user_data.get('gmail'): send_customer_gmail(user_data['gmail'], user_data['name'], selected_cat)
-    return jsonify({"status": "SUCCESS", "message": f"🎯 Category Locked: {selected_cat.upper()} & Mail Alert Sent!"})
+    return jsonify({"status": "SUCCESS", "message": f"🎯 Category Locked & Mail Alert Sent!"})
 
 @app.route('/admin/delete_user', methods=['POST'])
 def delete_user():
@@ -100,8 +126,8 @@ def delete_user():
     target_user = request.json.get('target_user'); db = load_db()
     if target_user in db["customers"]:
         db["customers"].pop(target_user); save_db(db)
-        return jsonify({"status": "SUCCESS", "message": f"💥 Customer {target_user} successfully KICKED OUT & DELETED!"})
-    return jsonify({"status": "ERROR", "message": "User not found!"})
+        return jsonify({"status": "SUCCESS", "message": f"💥 Customer successfully DELETED!"})
+    return jsonify({"status": "ERROR"})
 
 @app.route('/admin/toggle_status', methods=['POST'])
 def toggle_status():
@@ -109,7 +135,7 @@ def toggle_status():
     target_user = request.json.get('target_user'); action = request.json.get('action'); db = load_db()
     if target_user in db["customers"]:
         db["customers"][target_user]["is_active"] = (action == 'unblock'); save_db(db)
-        return jsonify({"status": "SUCCESS", "message": f"Status updated successfully!"})
+        return jsonify({"status": "SUCCESS", "message": "Status updated successfully!"})
     return jsonify({"status": "ERROR"})
 
 @app.route('/logout')
