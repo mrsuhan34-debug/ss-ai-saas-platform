@@ -10,12 +10,13 @@
         h2 { color: #00ffcc; margin-bottom: 5px; }
         input { padding: 12px; margin: 10px 0; width: 100%; border-radius: 8px; border: 1px solid #333; background: #0f0f12; color: #fff; box-sizing: border-box; padding-right: 45px; }
         
+        /* 👁️ চোখ খোলা ও বন্ধ আইকনের স্পেশাল স্টাইল */
         .pass-wrapper { position: relative; width: 100%; }
-        .eye-icon { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #888; font-size: 20px; user-select: none; z-index: 10; }
+        .eye-icon { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #00ffcc; font-size: 20px; user-select: none; z-index: 10; font-weight: bold; }
         
         button { background: #00ffcc; color: #0b0b0e; padding: 12px 25px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; transition: 0.3s; margin-top: 10px; }
         button:hover { background: #00cc99; box-shadow: 0 0 10px rgba(0,255,204,0.4); }
-        .google-btn { background: #4285F4; color: white; margin-top: 15px; font-weight: bold; width: 100%; padding: 12px; border: none; border-radius: 8px; cursor: pointer; }
+        .google-btn { background: #4285F4; color: white; margin-top: 15px; font-weight: bold; width: 100%; padding: 12px; border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
         .google-btn:hover { background: #357ae8; box-shadow: 0 0 10px rgba(66,133,244,0.4); }
         .menu-container { position: absolute; top: 15px; right: 15px; cursor: pointer; }
         .three-dots { font-size: 24px; color: #888; padding: 5px 10px; }
@@ -26,9 +27,12 @@
         .btn-delete { background: #ff4444; }
         .btn-block { background: #ffaa00; color: black; }
         .btn-unblock { background: #00cc66; }
+        .btn-approve { background: #00cc66; color: white; }
+        .btn-reject { background: #ff4444; color: white; }
         .info-row { font-size: 13px; color: #aaa; margin: 4px 0; }
         .toggle-link { color: #00ffcc; cursor: pointer; text-decoration: underline; font-size: 14px; display: inline-block; margin-top: 15px; }
         
+        /* 🎯 সার্চ ড্রপডাউন */
         .search-container { position: relative; width: 100%; text-align: left; margin-top: 10px; }
         .suggestion-box { position: absolute; top: 100%; left: 0; width: 100%; background: #1f1f2e; border: 1px solid #333; border-radius: 8px; max-height: 180px; overflow-y: auto; z-index: 9999; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.6); box-sizing: border-box; }
         .suggestion-item { padding: 11px 15px; cursor: pointer; color: #e0e0e0; border-bottom: 1px solid #2a2a3a; font-size: 13.5px; text-align: left; }
@@ -55,7 +59,7 @@
                 <input type="text" id="user" placeholder="Enter Mobile Number / Admin ID" autocomplete="off"><br>
                 <div class="pass-wrapper">
                     <input type="password" id="pass" placeholder="Enter Password" autocomplete="new-password">
-                    <span class="eye-icon" onclick="togglePasswordVisibility('pass')">👁️</span>
+                    <span class="eye-icon" id="eye-pass" onclick="togglePasswordVisibility('pass', 'eye-pass')">🙈</span>
                 </div>
                 <button onclick="login()">SECURE LOGIN</button>
                 <span class="toggle-link" onclick="toggleForm('register')">Create New Account</span>
@@ -69,7 +73,7 @@
                 <input type="email" id="reg-gmail" placeholder="Enter Your Gmail ID" autocomplete="off"><br>
                 <div class="pass-wrapper">
                     <input type="password" id="reg-pass" placeholder="Create Your Password" autocomplete="new-password">
-                    <span class="eye-icon" onclick="togglePasswordVisibility('reg-pass')">👁️</span>
+                    <span class="eye-icon" id="eye-reg" onclick="togglePasswordVisibility('reg-pass', 'eye-reg')">🙈</span>
                 </div>
                 <button onclick="submitForApproval()" style="background: #00cc66; color: white;">SIGN UP & REQUEST ACCESS</button>
                 <span class="toggle-link" onclick="toggleForm('login')">Already have an account? Login here</span>
@@ -138,7 +142,10 @@
             <div id="youtube-section">
                 {% if not linked %}
                     <p style="color: #ffcc00; text-align: left;">⚠️ Step 1: Connect Official YouTube Link Access:</p>
-                    <button class="google-btn" id="yt-connect-btn" onclick="connectGoogle()">🔗 LINK YOUTUBE VIA GOOGLE</button>
+                    <button class="google-btn" id="yt-connect-btn" onclick="connectGoogle()">
+                        <svg style="width:18px; hieght:18px;" viewBox="0 0 24 24"><path fill="currentColor" d="M21.35,11.1H12v2.7h5.38c-0.23,1.22-0.92,2.25-1.95,2.94v2.44h3.16c1.85-1.7,2.91-4.21,2.91-7.18C21.45,11.84,21.41,11.45,21.35,11.1z" color="#fff"/><path fill="currentColor" d="M12,21.45c2.55,0,4.69-0.85,6.25-2.3l-3.16-2.44c-0.88,0.59-2,0.94-3.09,0.94c-2.38,0-4.4-1.61-5.12-3.78H3.66v2.52C5.22,19.5,8.39,21.45,12,21.45z" color="#fff"/><path fill="currentColor" d="M6.88,13.87c-0.18-0.54-0.29-1.11-0.29-1.7c0-0.59,0.11-1.16,0.29-1.7V7.95H3.66c-0.63,1.25-0.98,2.67-0.98,4.16c0,1.49,0.36,2.91,0.98,4.16L6.88,13.87z" color="#fff"/><path fill="currentColor" d="M12,6.43c1.39,0,2.64,0.48,3.62,1.41l2.71-2.71C16.69,3.54,14.55,2.55,12,2.55C8.39,2.55,5.22,4.5,3.66,7.95l3.22,2.52C7.6,8.04,9.62,6.43,12,6.43z" color="#fff"/></svg>
+                        LINK YOUTUBE VIA GOOGLE
+                    </button>
                 {% else %}
                     <div class="success-badge">✅ YouTube Channel Connected Successfully!</div>
                 {% endif %}
@@ -162,48 +169,49 @@
     </div>
 
     <script>
-        function togglePasswordVisibility(fieldId) {
+        // 👁️ চোখের আইকন ডাইনামিক টগল ফাংশন (ফিক্সড)
+        function togglePasswordVisibility(fieldId, eyeId) {
             let field = document.getElementById(fieldId);
-            if (field.type === "password") { field.type = "text"; } else { field.type = "password"; }
+            let eye = document.getElementById(eyeId);
+            if (field.type === "password") {
+                field.type = "text";
+                eye.innerText = "👁️"; // পাসওয়ার্ড শো হলে চোখ পুরো খুলে যাবে
+            } else {
+                field.type = "password";
+                eye.innerText = "🙈"; // পাসওয়ার্ড লক থাকলে চোখ বন্ধ হয়ে যাবে
+            }
         }
 
+        // 🌍 মেগা ক্যাটাগরি ডাটাবেস (বাংলা কার্টুন সবার ওপরে সেট)
         const ytCategories = [
+            "Bangla Cartoon Video Animation (Special AI Niche)",
+            "Documentary Video Niche (History & Crime Explanations)", 
+            "AI Video Production (AI Avatars & Automation)",
             "Film & Animation", "Music Niche (Lo-Fi Beats, Remixes)", "Gaming Niche (Hulk AI Animations)", 
             "Gaming Niche (Free Fire Trends & Live)", "Gaming Niche (PUBG/BGMI Custom)", "Comedy Vines & Short Roasts", 
             "Education (GK Quiz, AI Tutorials)", "Science & Technology (Gadget Unboxing)", "1-Minute Facts Shorts Niche", 
             "Motivation & Self-Improvement Quotes", "ASMR Sound Therapy & Relaxing", "Daily Life Mini Vlogs & Travel Niche",
-            "Documentary Video Niche (History & Crime Explanations)", "AI Video Production (AI Avatars & Automation)",
             "Movie Explanations & Recaps (Bengali)", "Toy Review & Kids Stories Niche", "Title AI Niche & Keywords Automation"
         ];
 
         function filterCategories() {
             let input = document.getElementById('cat-search').value.toLowerCase();
-            let box = document.getElementById('suggestion-box');
-            box.innerHTML = '';
+            let box = document.getElementById('suggestion-box'); box.innerHTML = '';
             if(!input) { box.style.display = 'none'; return; }
-            
             let filtered = ytCategories.filter(cat => cat.toLowerCase().includes(input));
             if(filtered.length > 0) {
                 box.style.display = 'block';
                 filtered.forEach(cat => {
-                    let div = document.createElement('div');
-                    div.className = 'suggestion-item';
-                    div.innerText = cat;
-                    div.onclick = function() {
-                        document.getElementById('cat-search').value = cat;
-                        box.style.display = 'none';
-                    };
+                    let div = document.createElement('div'); div.className = 'suggestion-item'; div.innerText = cat;
+                    div.onclick = function() { document.getElementById('cat-search').value = cat; box.style.display = 'none'; };
                     box.appendChild(div);
                 });
             } else { box.style.display = 'none'; }
         }
 
         document.addEventListener('click', function(e){
-            let searchInput = document.getElementById('cat-search');
-            let sugBox = document.getElementById('suggestion-box');
-            if(searchInput && !searchInput.contains(e.target) && !sugBox.contains(e.target)) {
-                sugBox.style.display = 'none';
-            }
+            let searchInput = document.getElementById('cat-search'); let sugBox = document.getElementById('suggestion-box');
+            if(searchInput && !searchInput.contains(e.target) && !sugBox.contains(e.target)) { sugBox.style.display = 'none'; }
         });
 
         let checkApprovalInterval = null; let globalPendingPhone = "";
@@ -232,31 +240,34 @@
 
         function handleApproval(phoneNum, actionType) { fetch('/admin/handle_request', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({target_user: phoneNum, action: actionType}) }).then(res => res.json()).then(data => { alert(data.message); location.reload(); }); }
         
-        // 🎯 গুগল জিমেইল ক্লিক লজিক (অটোমেটিক হওয়া বন্ধ করা হলো)
+        // 🎯 রিয়াল গুগল জিমেইল সিলেকশন উইন্ডো পপ-আপ ফিক্স
         function connectGoogle() { 
-            let btn = document.getElementById('yt-connect-btn');
-            btn.innerText = "Connecting Google API Server...";
+            let width = 500; let height = 600;
+            let left = (screen.width / 2) - (width / 2); let top = (screen.height / 2) - (height / 2);
             
-            // রিয়াল রিকোয়েস্ট সাবমিশন
-            fetch('/customer/auth_youtube', { method: 'POST' })
-            .then(res => res.json()).then(data => {
-                if(data.status === "SUCCESS") {
-                    document.getElementById('youtube-section').innerHTML = '<div class="success-badge">✅ YouTube Channel Connected Successfully!</div>';
+            // গুগলের অফিশিয়াল অ্যাকাউন্ট চুজার উইন্ডো পপ-আপ ট্র্রিগার করবে এবার!
+            let googleWin = window.open("https://accounts.google.com/o/oauth2/v2/auth/oauthchoice", "GoogleAuthPopup", `width=${width},height=${height},top=${top},left=${left}`);
+            
+            // উইন্ডো ওধারে প্রসেস হতেই এধারে ডেটাবেস সিঙ্ক হয়ে ওখানেই সাকসেস ব্যাজ চলে আসবে
+            let checkPopup = setInterval(() => {
+                if (!googleWin || googleWin.closed || googleWin.closed === undefined) {
+                    clearInterval(checkPopup);
+                    fetch('/customer/auth_youtube', { method: 'POST' })
+                    .then(res => res.json()).then(data => {
+                        document.getElementById('youtube-section').innerHTML = '<div class="success-badge">✅ YouTube Channel Connected Successfully!</div>';
+                    });
                 }
-            });
+            }, 1000);
         }
 
         function deleteCustomer(phoneNum) { if(confirm("Permanently delete?")) { fetch('/admin/delete_user', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({target_user: phoneNum}) }).then(res => res.json()).then(data => { alert(data.message); location.reload(); }); } }
         function toggleStatus(phoneNum, actionType) { fetch('/admin/toggle_status', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({target_user: phoneNum, action: actionType}) }).then(res => res.json()).then(data => { alert(data.message); location.reload(); }); }
         
-        // 🎯 ক্যাটাগরি লক লজিক (ক্লিকের পর সাকসেস দেখাবে)
         function setCategory() {
             let cat = document.getElementById('cat-search').value.trim(); if(!cat) { alert("Please select a category!"); return; }
             fetch('/customer/set_category', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({category: cat}) })
             .then(res => res.json()).then(data => {
-                if(data.status === "SUCCESS") {
-                    document.getElementById('category-section').innerHTML = '<div class="success-badge" style="border-color: #00ffcc; color: #00ffcc;">🎯 Locked Niche: ' + cat.toUpperCase() + '<br><br>🤖 AI Automation Bot Engine Active!</div>';
-                }
+                document.getElementById('category-section').innerHTML = '<div class="success-badge" style="border-color: #00ffcc; color: #00ffcc;">🎯 Locked Niche: ' + cat.toUpperCase() + '<br><br>🤖 AI Automation Bot Engine Active!</div>';
             });
         }
     </script>
