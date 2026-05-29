@@ -1,0 +1,14 @@
+{
+    "admin": {
+        "password": "suhan_admin_2026",
+        "role": "admin"
+    },
+    "customers": {
+        "demo_client": {
+            "password": "client_pass_2026",
+            "category": "",
+            "is_active": true,
+            "youtube_linked": false
+        }
+    }
+}
