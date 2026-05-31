@@ -7,6 +7,10 @@ from flask import Flask, render_template, request, jsonify, session, redirect, u
 from pymongo import MongoClient
 
 app = Flask(__name__)
+# [DEBUG MODE] সার্ভার বুট হওয়ার সময় কী এরর হচ্ছে তা সরাসরি লগে প্রিন্ট করবে
+import logging
+logging.basicConfig(level=logging.DEBUG)
+app.logger.setLevel(logging.DEBUG)
 
 # 🔒 সেশন সিকিউরিটি লক লজিক
 app.secret_key = "suhan_saas_ultra_secure_permanent_key_2026"
@@ -303,5 +307,10 @@ def logout():
     return redirect(url_for('index'))
 
 if __name__ == '__main__': 
+    # Gunicorn এর জন্য একটি এক্সট্রা এরর হ্যান্ডলার
+@app.errorhandler(Exception)
+def handle_exception(e):
+    app.logger.error(f"FATAL ERROR: {e}")
+    return jsonify({"error": str(e)}), 500
     app.run(host='0.0.0.0', port=5000, debug=True)
 # Suhan SaaS Final Safe Refresh All-In-One 2026
