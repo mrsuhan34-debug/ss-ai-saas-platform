@@ -53,21 +53,31 @@ def get_all_customers():
         try:
             all_users = users_collection.find({"role": {"$ne": "admin"}})
             for u in all_users:
-                # 📅 সাবস্ক্রিপশন ডেট ট্র্যাকিং লজিক (১০০% ক্র্যাশ প্রুফ করা হলো ভাই)
+                # 📅 সাবস্ক্রিপশন ডেট ট্র্যাকিং লজিক (পাইথন ৩.১৪-এর জন্য সম্পূর্ণ ক্র্যাশ প্রুফ মেথড)
                 approved_at_str = u.get("approved_at", "")
                 days_left = 30
                 is_expired = False
                 
-                if approved_at_str and approved_at_str.strip():
+                if approved_at_str:
                     try:
-                        approved_date = datetime.strptime(approved_at_str.strip(), "%Y-%m-%d")
-                        elapsed_days = (datetime.now() - approved_date).days
-                        days_left = max(0, 30 - elapsed_days)
-                        if elapsed_days >= 30:
-                            is_expired = True
+                        # স্ট্রিং থেকে ক্লিন ডেট বের করা হচ্ছে ভাই
+                        clean_date_str = str(approved_at_str).strip()
+                        if clean_date_str:
+                            approved_date = datetime.strptime(clean_date_str, "%Y-%m-%d")
+                            # টাইমজোন ঝামেলা এড়াতে ডিরেক্ট ডেট ডিফারেন্স নেওয়া হলো
+                            current_date = datetime.now()
+                            elapsed_days = (current_date - approved_date).days
+                            
+                            if elapsed_days >= 0:
+                                days_left = 30 - elapsed_days
+                                if days_left < 0:
+                                    days_left = 0
+                                if elapsed_days >= 30:
+                                    is_expired = True
                     except Exception as date_err:
-                        print(f"⚠️ Date parsing error for user {u.get('_id')}: {date_err}")
-                        pass
+                        print(f"⚠️ Safe Date Parsing Warning: {date_err}")
+                        days_left = 30
+                        is_expired = False
 
                 customers[u["_id"]] = {
                     "name": u.get("name", "Unknown"),
@@ -78,8 +88,8 @@ def get_all_customers():
                     "is_blocked": u.get("is_blocked", False),
                     "youtube_linked": u.get("youtube_linked", False),
                     "approved_at": approved_at_str,
-                    "days_left": days_left,
-                    "is_expired": is_expired
+                    "days_left": int(days_left),
+                    "is_expired": bool(is_expired)
                 }
         except Exception as e:
             print(f"❌ Error fetching customers: {e}")
@@ -294,4 +304,4 @@ def logout():
 
 if __name__ == '__main__': 
     app.run(host='0.0.0.0', port=5000, debug=True)
-# Suhan SaaS Ultra Force Refresh 2026
+# Suhan SaaS Final Safe Refresh All-In-One 2026
