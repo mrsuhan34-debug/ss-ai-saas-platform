@@ -1,142 +1,414 @@
-import os
-import json
-import random
-from datetime import datetime, timedelta
-from flask import Flask, render_template, request, jsonify, session, redirect, url_for
-
-app = Flask(__name__)
-app.secret_key = "suhan_super_secret_key_2026"
-app.permanent_session_lifetime = timedelta(days=31)
-
-DB_FILE = 'users_db.json'
-
-def load_db():
-    if os.path.exists(DB_FILE):
-        with open(DB_FILE, 'r') as f: return json.load(f)
-    return {"admin": {"user_id": "SS_ELITE_ADMIN_2026", "password": "REK_#9824_SNC_@Z7X", "role": "admin"}, "customers": {}}
-
-def save_db(data):
-    with open(DB_FILE, 'w') as f: 
-        json.dump(data, f, indent=4)
-
-@app.route('/')
-def index():
-    if 'username' in session:
-        db = load_db()
-        if session['role'] == 'admin': 
-            return render_template('index.html', role='admin', username=session['username'], customers=db["customers"])
-        user_info = db["customers"].get(session['username'], {})
-        if not user_info.get('is_approved', False): 
-            session.clear(); return redirect(url_for('index'))
-        if not user_info.get('is_active', True): 
-            session.clear(); return "<h1>🛑 Account Blocked!</h1><a href='/logout'>Go Back</a>"
-        return render_template('index.html', role='customer', username=session['username'], name=user_info.get('name', 'Customer'), category=user_info.get('category', ''), linked=user_info.get('youtube_linked', False), gmail_id=user_info.get('gmail', ''))
-    return render_template('index.html', role='guest')
-
-@app.route('/get_live_ai_data')
-def get_live_ai_data():
-    if 'username' not in session: return jsonify({"topic": "N/A", "title": "N/A", "upload_time": "N/A", "status": "OFFLINE"})
-    
-    db = load_db()
-    user_info = db["customers"].get(session['username'], {})
-    category = user_info.get('category', '').lower()
-    
-    if "cartoon" in category:
-        topics = ["Bengali Fairy Tales - The Golden Bird", "Ghost Story - Suspicious Village", "Aladin New Magical Lamp Episode"]
-        titles = ["সোনার পাখি ও জাদুকরী রাজা | Bengali Fairy Tales AI", "ভুতুড়ে গ্রামের রহস্যময় রাত! | Horror Cartoon Story", "আলাদিনের নতুন জাদুর চেরাগের কেল্লাফতে! 🔥"]
-        best_time = "⏱️ TODAY AT 04:30 PM (Based on Kids Content Traffic)"
-    elif "documentary" in category:
-        topics = ["The Deep Secrets of Bermuda Triangle", "Mystery of Ancient Egyptian Pyramids", "World War II Unsolved Codes"]
-        titles = ["Bermuda Triangle: The Unsolved Graveyard of Ocean 🌊", "The Secret Rooms Inside Pyramids Hidden For 4000 Years!", "The Deadliest Hidden Codes of WW2 Left Unanswered."]
-        best_time = "⏱️ TODAY AT 08:15 PM (Based on Audience Retention Traffic)"
-    else:
-        topics = ["AI Automation Trends of 2026", "How To Scale Faceless YouTube Channel Fast", "Viral Editing Hacks with Topaz AI"]
-        titles = ["The Future is Here: AI Systems of 2026 You Can't Ignore! 🔥", "I Started a Faceless YouTube Channel in 24 Hours (Secret AI Strategy)", "Cinematic Visuals Masterclass: Topaz AI Video Enhancement Tutorial"]
-        best_time = "⏱️ TODAY AT 06:00 PM (Optimized via Peak Audience Traffic)"
-
-    random.seed(int(datetime.now().strftime("%Y%m%d"))) 
-    current_topic = random.choice(topics)
-    current_title = random.choice(titles)
-    
-    return jsonify({
-        "topic": current_topic,
-        "title": current_title,
-        "upload_time": best_time,
-        "status": "🤖 AI ENGINE STATUS: 🟢 MONITORING LIVE TRAFFIC & SCHEDULING POST"
-    })
-
-@app.route('/login', methods=['POST'])
-def login():
-    data = request.json
-    username = data.get('username', '').strip()
-    password = data.get('password', '').strip()
-    client_device = data.get('device_id', '')
-    db = load_db()
-    
-    if username == db["admin"]["user_id"] and password == db["admin"]["password"]:
-        session.permanent = True; session['username'] = "Owner"; session['role'] = "admin"
-        return jsonify({"status": "SUCCESS", "message": "👑 Admin verified! Access granted."})
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SS-AI Enterprise SaaS Platform</title>
+    <style>
+        body { background: #0f0f12; color: #e0e0e0; font-family: 'Segoe UI', Arial, sans-serif; text-align: center; padding: 40px; margin: 0; }
+        .box { background: #17171f; padding: 40px; border-radius: 15px; display: inline-block; box-shadow: 0 4px 15px rgba(0,255,204,0.1); max-width: 480px; width: 100%; border: 1px solid #222; position: relative; margin-top: 20px; box-sizing: border-box; }
+        h2 { color: #00ffcc; margin-bottom: 5px; }
+        input { padding: 12px; margin: 10px 0; width: 100%; border-radius: 8px; border: 1px solid #333; background: #0f0f12; color: #fff; box-sizing: border-box; padding-right: 45px; }
         
-    if username in db["customers"] and db["customers"][username]["password"] == password:
-        user_data = db["customers"][username]
-        if not user_data.get('is_approved', False): return jsonify({"status": "ERROR", "message": "⏳ Request is still PENDING approval!"})
-        if not user_data.get('is_active', True): return jsonify({"status": "ERROR", "message": "🛑 LOGIN DENIED: Account is BLOCKED!"})
-        if user_data.get('device_id') and user_data.get('device_id') != client_device: return jsonify({"status": "ERROR", "message": "🛑 [DEVICE LOCKED] Bound to another phone!"})
+        .menu-container { position: absolute; top: 15px; right: 20px; cursor: pointer; z-index: 1000; }
+        .three-lines { font-size: 24px; color: #00ffcc; font-weight: bold; user-select: none; }
+        .dropdown-menu { position: absolute; top: 35px; right: 0; background: #1f1f2e; border: 1px solid #333; border-radius: 8px; width: 270px; display: none; box-shadow: 0 4px 15px rgba(0,0,0,0.5); text-align: left; padding: 10px; box-sizing: border-box; }
+        .dropdown-menu a { color: #fff; text-decoration: none; display: block; padding: 12px; font-weight: bold; border-bottom: 1px solid #2a2a3a; font-size: 13.5px; cursor: pointer; }
+        .dropdown-menu a:hover { background: rgba(0,255,204,0.1); color: #00ffcc; }
         
-        if not user_data.get('device_id'): db["customers"][username]["device_id"] = client_device; save_db(db)
-        session.permanent = True; session['username'] = username; session['role'] = "customer"
-        return jsonify({"status": "SUCCESS", "message": "Login Successful!"})
-    return jsonify({"status": "ERROR", "message": "Access Denied: Invalid Credentials!"})
+        /* 👥 ভেসে ওঠার লাইভ পপ-আপ ডাটাবেস উইন্ডো (Modal CSS) */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; z-index: 99999; padding: 20px; box-sizing: border-box; }
+        .modal-content { background: #17171f; width: 100%; max-width: 950px; border-radius: 12px; border: 2px solid #00ffcc; padding: 25px; box-shadow: 0 0 35px rgba(0,255,204,0.3); max-height: 85vh; overflow-y: auto; text-align: left; position: relative; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #222; padding-bottom: 12px; margin-bottom: 15px; }
+        .modal-close { font-size: 28px; color: #ff4444; cursor: pointer; font-weight: bold; user-select: none; }
+        .db-table { width: 100%; border-collapse: collapse; background: #14141f; border-radius: 8px; overflow: hidden; margin-top: 10px; }
+        .db-table th, .db-table td { padding: 15px; border-bottom: 1px solid #222; font-size: 14px; text-align: left; }
+        .db-table th { background: #1f1f2e; color: #00ffcc; text-transform: uppercase; font-size: 11.5px; font-weight: bold; letter-spacing: 0.5px; }
+        .db-table tr:hover { background: rgba(0,255,204,0.04); }
+        
+        .pass-wrapper { position: relative; width: 100%; }
+        .eye-icon { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #00ffcc; font-size: 20px; user-select: none; z-index: 10; font-weight: bold; }
+        
+        button { background: #00ffcc; color: #0b0b0e; padding: 12px 25px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; transition: 0.3s; margin-top: 10px; }
+        button:hover { background: #00cc99; box-shadow: 0 0 10px rgba(0,255,204,0.4); }
+        .google-btn { background: #4285F4; color: white; margin-top: 15px; font-weight: bold; width: 100%; padding: 12px; border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .google-btn:hover { background: #357ae8; box-shadow: 0 0 10px rgba(66,133,244,0.4); }
+        
+        .client-card { background: #222; padding: 15px; margin: 15px 0; border-radius: 8px; text-align: left; border: 1px solid #333; }
+        .action-btn { padding: 8px 14px; font-size: 12px; font-weight: bold; border: none; border-radius: 6px; cursor: pointer; margin-right: 5px; color: white; transition: 0.2s; }
+        .btn-kick { background: #ff4444; }
+        .btn-kick:hover { background: #cc0000; box-shadow: 0 0 8px rgba(255,68,68,0.3); }
+        .btn-block { background: #ffaa00; color: black; }
+        .btn-block:hover { background: #cc8800; box-shadow: 0 0 8px rgba(255,170,0,0.3); }
+        .btn-approve { background: #00cc66; color: white; }
+        .btn-reject { background: #ff4444; color: white; }
+        .info-row { font-size: 13px; color: #aaa; margin: 4px 0; }
+        .toggle-link { color: #00ffcc; cursor: pointer; text-decoration: underline; font-size: 14px; display: inline-block; margin-top: 15px; }
+        
+        .search-container { position: relative; width: 100%; text-align: left; margin-top: 10px; }
+        .suggestion-box { position: absolute; top: 100%; left: 0; width: 100%; background: #1f1f2e; border: 1px solid #333; border-radius: 8px; max-height: 180px; overflow-y: auto; z-index: 9999; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.6); box-sizing: border-box; }
+        .suggestion-item { padding: 11px 15px; cursor: pointer; color: #e0e0e0; border-bottom: 1px solid #2a2a3a; font-size: 13.5px; text-align: left; }
+        .suggestion-item:hover { background: #00ffcc; color: #0b0b0e; font-weight: bold; }
+        
+        .success-badge { background: #112a22; color: #00ffcc; padding: 15px; border-radius: 8px; border: 1px solid #00cc66; font-weight: bold; margin: 15px 0; font-size: 14px; text-align: center; border-left: 4px solid #00ffcc; }
+        
+        .ai-tracker-card { background: #14141f; border: 1px solid #00ffcc; border-radius: 12px; padding: 20px; margin-top: 15px; text-align: left; box-shadow: 0 0 15px rgba(0,255,204,0.15); }
+        .tracker-row { margin-bottom: 12px; font-size: 14.5px; color: #ccc; border-bottom: 1px dashed #222; padding-bottom: 8px; }
+        .tracker-row:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+        .tracker-label { font-weight: bold; color: #888; font-size: 13px; text-transform: uppercase; display: block; margin-bottom: 2px; }
+        .tracker-value { color: #fff; font-weight: 500; }
+        .live-pulse { width: 8px; height: 8px; background: #00ffcc; border-radius: 50%; display: inline-block; margin-right: 6px; box-shadow: 0 0 8px #00ffcc; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { transform: scale(0.9); opacity: 0.6; } 50% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(0.9); opacity: 0.6; } }
+    </style>
+</head>
+<body>
+    <div class="box">
+        {% if role != 'guest' %}
+            <div class="menu-container" onclick="toggleMenu(event)">
+                <div class="three-lines">☰</div>
+                <div class="dropdown-menu" id="myDropdown">
+                    <a href="/logout" style="color: #ff4444;">🚪 Log Out Platform</a>
+                    {% if role == 'admin' %}
+                        <a onclick="openModal('dbModal')" style="color: #00ffcc;">👥 View Active Customers ⭐</a>
+                        
+                        {% set exp_count = 0 %}
+                        {% for p, i in customers.items() %}
+                            {% if i.is_approved and i.is_expired %}
+                                {% set exp_count = exp_count + 1 %}
+                            {% endif %}
+                        {% endfor %}
+                        <a onclick="openModal('expModal')" style="color: #ff4444;">⚠️ Expired Customers ({{ exp_count }}) 🚨</a>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
 
-@app.route('/register_request', methods=['POST'])
-def register_request():
-    data = request.json
-    name = data.get('name', '').strip(); phone = data.get('phone', '').strip(); gmail = data.get('gmail', '').strip(); password = data.get('password', '').strip(); client_device = data.get('device_id', '')
-    db = load_db()
-    if phone in db["customers"]: return jsonify({"status": "ERROR", "message": "🛑 Number already registered!"})
-    db["customers"][phone] = {"name": name, "password": password, "category": "", "gmail": gmail, "is_active": True, "is_approved": False, "youtube_linked": False, "device_id": client_device}
-    save_db(db)
-    return jsonify({"status": "SUCCESS"})
+        {% if role == 'guest' %}
+            <div id="login-form">
+                <h2>🚀 SS-AI SaaS Platform</h2>
+                <p style="color: #888;">Secure Login Gateway</p>
+                <input type="text" id="user" placeholder="Enter User ID / Admin ID" autocomplete="off"><br>
+                <div class="pass-wrapper">
+                    <input type="password" id="pass" placeholder="Enter Password" autocomplete="new-password">
+                    <span class="eye-icon" id="eye-pass" onclick="togglePasswordVisibility('pass', 'eye-pass')">🙈</span>
+                </div>
+                <button onclick="login()">SECURE LOGIN</button>
+                <span class="toggle-link" onclick="toggleForm('register')">Create New Account</span>
+            </div>
 
-@app.route('/check_approval_status', methods=['POST'])
-def check_approval_status():
-    phone = request.json.get('phone', '').strip(); db = load_db()
-    if phone not in db["customers"]: return jsonify({"status": "REJECTED"})
-    if db["customers"][phone].get('is_approved', False): return jsonify({"status": "APPROVED"})
-    return jsonify({"status": "PENDING"})
+            <div id="register-form" style="display: none;">
+                <h2>🎨 Create AI Studio Account</h2>
+                <p style="color: #888;">Register as a New Customer</p>
+                <input type="text" id="reg-name" placeholder="Enter Your Full Name" autocomplete="off"><br>
+                <input type="text" id="reg-phone" placeholder="Enter Your Mobile Number" autocomplete="off"><br>
+                <input type="email" id="reg-gmail" placeholder="Enter Your Gmail ID" autocomplete="off"><br>
+                <div class="pass-wrapper">
+                    <input type="password" id="reg-pass" placeholder="Create Your Password" autocomplete="new-password">
+                    <span class="eye-icon" id="eye-reg" onclick="togglePasswordVisibility('reg-pass', 'eye-reg')">🙈</span>
+                </div>
+                <button onclick="submitForApproval()" style="background: #00cc66; color: white;">SIGN UP & REQUEST ACCESS</button>
+                <span class="toggle-link" onclick="toggleForm('login')">Already have an account? Login here</span>
+            </div>
 
-@app.route('/admin/handle_request', methods=['POST'])
-def handle_request():
-    if 'username' not in session or session['role'] != 'admin': return jsonify({"status": "ERROR"})
-    data = request.json; target_user = data.get('target_user'); action = data.get('action'); db = load_db()
-    if target_user in db["customers"]:
-        if action == 'approve': db["customers"][target_user]["is_approved"] = True; save_db(db); return jsonify({"status": "SUCCESS", "message": "✅ Account APPROVED Live!"})
-        elif action == 'reject': db["customers"].pop(target_user); save_db(db); return jsonify({"status": "SUCCESS", "message": "❌ Account REJECTED!"})
-    return jsonify({"status": "ERROR"})
+            <div id="processing-form" style="display: none;">
+                <h2 style="color: #ffaa00;">⏳ Wait Processing...</h2>
+                <p style="color: #aaa; font-size: 15px; padding: 10px;">Your registration request has been sent live to Platform Admin.</p>
+                <div style="margin: 20px 0; font-size: 14px; color: #00ffcc; font-weight: bold; animation: blink 1.5s infinite;">
+                    🔒 System is syncing live. As soon as Admin clicks Approve, you will be logged in automatically!
+                </div>
+            </div>
+            <div id="msg" style="margin-top: 15px; color: #00ffcc; font-weight: bold;"></div>
 
-@app.route('/customer/auth_youtube', methods=['POST'])
-def auth_youtube():
-    if 'username' not in session: return jsonify({"status": "ERROR"})
-    db = load_db(); username = session['username']
-    db["customers"][username]["youtube_linked"] = True; save_db(db)
-    return jsonify({"status": "SUCCESS"})
+        {% elif role == 'admin' %}
+            <h2>👑 Admin Control Room</h2>
+            <p style="color: #00ffcc; margin-bottom: 25px;">Platform Owner Mode</p>
+            <hr style="border-color: #333;">
+            
+            <h4 style="text-align: left; color: #ffaa00; margin-bottom: 5px;">⏳ Pending Approval Requests:</h4>
+            <div id="pending-list">
+                {% set has_pending = false %}
+                {% for phone, info in customers.items() %}
+                    {% if not info.is_approved %}
+                        {% set has_pending = true %}
+                        <div class="client-card" style="border: 2px dashed #ffaa00;">
+                            <button class="action-btn btn-reject" onclick="handleApproval('{{ phone }}', 'reject')" style="float:right;">❌ CROSS</button>
+                            <button class="action-btn btn-approve" onclick="handleApproval('{{ phone }}', 'approve')" style="float:right;">✅ RIGHT</button>
+                            <strong>👤 Name: <span style="color: #ffaa00;">{{ info.name }}</span></strong><br>
+                            <div class="info-row">📞 <b>User ID:</b> {{ phone }}</div>
+                            <div class="info-row">📧 <b>Gmail:</b> {{ info.gmail }}</div>
+                            <div class="info-row">🔑 <b>Password:</b> {{ info.password }}</div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+                {% if not has_pending %}
+                    <p style="color: #666; font-size: 14px; padding: 20px;">No pending requests at the moment.</p>
+                {% endif %}
+            </div>
 
-@app.route('/customer/set_category', methods=['POST'])
-def set_category():
-    if 'username' not in session or session['role'] != 'customer': return jsonify({"status": "ERROR"})
-    selected_cat = request.json.get('category', '').strip(); db = load_db(); username = session['username']
-    db["customers"][username]["category"] = selected_cat; save_db(db)
-    return jsonify({"status": "SUCCESS"})
+            <div class="modal-overlay" id="dbModal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3 style="color: #00ffcc; margin: 0; font-size: 20px;">👥 Active Approved Customers Database</h3>
+                        <span class="modal-close" onclick="closeModal('dbModal')">&times;</span>
+                    </div>
+                    <div style="overflow-x: auto;">
+                        <table class="db-table">
+                            <thead>
+                                <tr>
+                                    <th>Customer Profile</th>
+                                    <th>User ID (Mobile)</th>
+                                    <th>Linked Gmail</th>
+                                    <th>Secure Password</th>
+                                    <th>Days Left</th>
+                                    <th>Action Control</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for phone, info in customers.items() %}
+                                    {% if info.is_approved and not info.is_expired %}
+                                        <tr>
+                                            <td>
+                                                <strong style="color: #fff; font-size: 15px;">{{ info.name }}</strong><br>
+                                                <span style="color: {% if info.is_blocked %}#ff4444{% else %}#00cc66{% endif %}; font-size: 11px; font-weight: bold;">
+                                                    {% if info.is_blocked %}[BLOCKED]{% else %}[ACTIVE]{% endif %}
+                                                </span>
+                                            </td>
+                                            <td style="font-weight: bold; color: #ccc; font-family: monospace; font-size: 15px;">{{ phone }}</td>
+                                            <td style="color: #aaa;">{{ info.gmail }}</td>
+                                            <td style="color: #ffcc00; font-weight: bold; font-family: monospace; font-size: 15px;">{{ info.password }}</td>
+                                            <td style="color: #00ffcc; font-weight: bold;">🟢 {{ info.days_left }} Days Left</td>
+                                            <td>
+                                                <button class="action-btn btn-kick" onclick="deleteCustomer('{{ phone }}')">🗑️ KICK</button>
+                                                <button class="action-btn btn-block" onclick="toggleStatus('{{ phone }}', '{% if info.is_blocked %}unblock{% else %}block{% endif %}')">
+                                                    {% if info.is_blocked %}🔓 UNBLOCK{% else %}🚫 BLOCK{% endif %}
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
 
-@app.route('/admin/delete_user', methods=['POST'])
-def delete_user():
-    if 'username' not in session or session['role'] != 'admin': return jsonify({"status": "ERROR"})
-    target_user = request.json.get('target_user'); db = load_db()
-    if target_user in db["customers"]: db["customers"].pop(target_user); save_db(db); return jsonify({"status": "SUCCESS", "message": "💥 Customer DELETED!"})
-    return jsonify({"status": "ERROR"})
+            <div class="modal-overlay" id="expModal">
+                <div class="modal-content" style="border-color: #ff4444; box-shadow: 0 0 35px rgba(255,68,68,0.3);">
+                    <div class="modal-header">
+                        <h3 style="color: #ff4444; margin: 0; font-size: 20px;">⚠️ Expired Subscription Accounts (30+ Days Completed)</h3>
+                        <span class="modal-close" onclick="closeModal('expModal')">&times;</span>
+                    </div>
+                    <div style="overflow-x: auto;">
+                        <table class="db-table">
+                            <thead>
+                                <tr style="background: #2e1f1f;">
+                                    <th>Customer Profile</th>
+                                    <th>User ID (Mobile)</th>
+                                    <th>Linked Gmail</th>
+                                    <th>Secure Password</th>
+                                    <th>Subscription Status</th>
+                                    <th>Action Control</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% set has_expired_rows = false %}
+                                {% for phone, info in customers.items() %}
+                                    {% if info.is_approved and info.is_expired %}
+                                        {% set has_expired_rows = true %}
+                                        <tr>
+                                            <td>
+                                                <strong style="color: #fff; font-size: 15px;">{{ info.name }}</strong><br>
+                                                <span style="color: #ff4444; font-size: 11px; font-weight: bold;">[EXPIRED]</span>
+                                            </td>
+                                            <td style="font-weight: bold; color: #ccc; font-family: monospace; font-size: 15px;">{{ phone }}</td>
+                                            <td style="color: #aaa;">{{ info.gmail }}</td>
+                                            <td style="color: #ffcc00; font-weight: bold;">{{ info.password }}</td>
+                                            <td style="color: #ff4444; font-weight: bold; animation: blink 1s infinite;">🔴 30 DAYS OVER</td>
+                                            <td>
+                                                <button class="action-btn btn-kick" onclick="deleteCustomer('{{ phone }}')">🗑️ KICK OUT</button>
+                                                <button class="action-btn btn-block" onclick="toggleStatus('{{ phone }}', 'block')" style="background: #ff4444; color: white;">🚫 BLOCK ACCESS</button>
+                                            </td>
+                                        </tr>
+                                    {% endif %}
+                                {% endfor %}
+                                {% if not has_expired_rows %}
+                                    <tr>
+                                        <td colspan="6" style="text-align: center; color: #666; padding: 30px;">No expired customers found. Everything is active!</td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
 
-@app.route('/logout')
-def logout(): session.clear(); return redirect(url_for('index'))
+        {% elif role == 'customer' %}
+            <h2>🎨 Customer AI Studio</h2>
+            <div style="text-align: left; background: #222; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #00ffcc;">
+                <p style="margin: 0; font-size: 16px;">👤 Name: <b>{{ name }}</b></p>
+                <p style="margin: 5px 0; font-size: 13.5px; color: #ccc;">📞 User ID: <b>{{ username }}</b></p>
+                <p style="margin: 5px 0; font-size: 13.5px; color: #ccc;">📧 Login Gmail: <b>{{ gmail_id }}</b></p>
+                <p style="margin: 5px 0 0 0; font-size: 13.5px; color: #ffcc00;">🔑 Account Password: <b>{{ user_password }}</b></p>
+            </div>
+            <hr style="border-color: #333;">
+            
+            {% if not linked or not category %}
+                <div id="youtube-section">
+                    {% if not linked %}
+                        <p style="color: #ffcc00; text-align: left;">⚠️ Step 1: Connect Official YouTube Link Access:</p>
+                        <button class="google-btn" id="yt-connect-btn" onclick="connectGoogle()">🔗 LINK YOUTUBE VIA GOOGLE</button>
+                    {% else %}
+                        <div class="success-badge">✅ YouTube Channel Connected Successfully!</div>
+                    {% endif %}
+                </div>
+                <hr style="border-color: #333; margin: 20px 0;">
 
-if __name__ == '__main__': 
-    app.run(host='0.0.0.0', port=5000, debug=True)
+                <div id="category-section">
+                    {% if not category %}
+                        <p style="color: #ffcc00; text-align: left;">⚠️ Step 2: Search & Select Category (Start Bot Engine):</p>
+                        <div class="search-container">
+                            <input type="text" id="cat-search" oninput="filterCategories()" placeholder="Type to search official YouTube niche..." autocomplete="off">
+                            <div class="suggestion-box" id="suggestion-box"></div>
+                        </div>
+                        <button onclick="setCategory()" style="margin-top: 15px;">LOCK CATEGORY & START BOT</button>
+                    {% else %}
+                        <div class="success-badge" style="border-color: #00ffcc; color: #00ffcc;">🎯 Locked Niche: {{ category.upper() }}</div>
+                    {% endif %}
+                </div>
+            {% else %}
+                <h3 style="color: #00ffcc; text-align: left; margin-bottom: 10px;">🤖 Live AI Engine Dashboard</h3>
+                <div class="ai-tracker-card">
+                    <div class="tracker-row">
+                        <span class="tracker-label">📧 Channel Target Mail</span>
+                        <span class="tracker-value" style="color: #00ffcc;">{{ gmail_id }}</span>
+                    </div>
+                    <div class="tracker-row">
+                        <span class="tracker-label">🎯 Configured Niche</span>
+                        <span class="tracker-value">{{ category }}</span>
+                    </div>
+                    <div class="tracker-row">
+                        <span class="tracker-label">🎬 Today's AI Topic</span>
+                        <span class="tracker-value" id="live-topic" style="color: #ffcc00;">Generating...</span>
+                    </div>
+                    <div class="tracker-row">
+                        <span class="tracker-label">🔥 Viral Recommended Title</span>
+                        <span class="tracker-value" id="live-title" style="font-style: italic; color: #fff;">Analyzing keywords...</span>
+                    </div>
+                    <div class="tracker-row">
+                        <span class="tracker-label">📝 AI Description & Thumbnail</span>
+                        <span class="tracker-value" id="live-desc" style="color: #aaa; font-size: 13.5px;">Generating metadata...</span>
+                    </div>
+                    <div class="tracker-row">
+                        <span class="tracker-label">⏳ Est. Video Length</span>
+                        <span class="tracker-value" id="live-length" style="color: #00ffcc;">Calculating length...</span>
+                    </div>
+                    <div class="tracker-row">
+                        <span class="tracker-label">📊 AI Traffic Optimizer (Best Upload Time)</span>
+                        <span class="tracker-value" id="live-time" style="color: #ffaa00; font-weight: bold;">Analyzing channel traffic...</span>
+                    </div>
+                    <div class="tracker-row" style="margin-top: 15px;">
+                        <span class="live-pulse"></span>
+                        <span style="font-size: 13px; color: #00ffcc; font-weight: bold;" id="live-status">AI BOT IS PROCESSING VIDEO...</span>
+                    </div>
+                </div>
+            {% endif %}
+            <div id="msg" style="margin-top: 15px; color: #ffcc00; font-weight: bold;"></div>
+        {% endif %}
+    </div>
+
+    <script>
+        function togglePasswordVisibility(fieldId, eyeId) {
+            let field = document.getElementById(fieldId); let eye = document.getElementById(eyeId);
+            if (field.type === "password") { field.type = "text"; eye.innerText = "👁️"; } else { field.type = "password"; eye.innerText = "🙈"; }
+        }
+
+        const ytCategories = [
+            "Bangla Cartoon Video Animation (Special AI Niche)", "Documentary Video Niche (History & Crime Explanations)", 
+            "AI Video Production (AI Avatars & Automation)", "Film & Animation", "Music Niche (Lo-Fi Beats, Remixes)", 
+            "Gaming Niche (Hulk AI Animations)", "Gaming Niche (Free Fire Trends & Live)", "Comedy Vines & Short Roasts", 
+            "Education (GK Quiz, AI Tutorials)", "Science & Technology (Gadget Unboxing)", "1-Minute Facts Shorts Niche", 
+            "Motivation & Self-Improvement Quotes", "ASMR Sound Therapy & Relaxing", "Title AI Niche & Keywords Automation"
+        ];
+
+        function filterCategories() {
+            let input = document.getElementById('cat-search').value.toLowerCase(); let box = document.getElementById('suggestion-box'); box.innerHTML = '';
+            if(!input) { box.style.display = 'none'; return; }
+            let filtered = ytCategories.filter(cat => cat.toLowerCase().includes(input));
+            if(filtered.length > 0) {
+                box.style.display = 'block';
+                filtered.forEach(cat => {
+                    let div = document.createElement('div'); div.className = 'suggestion-item'; div.innerText = cat;
+                    div.onclick = function() { document.getElementById('cat-search').value = cat; box.style.display = 'none'; };
+                    box.appendChild(div);
+                });
+            } else { box.style.display = 'none'; }
+        }
+
+        function toggleMenu(event) { event.stopPropagation(); let m = document.getElementById('myDropdown'); m.style.display = (m.style.display === 'block') ? 'none' : 'block'; }
+        
+        // 👥 ডাইনামিক মোডাল ওপেন/ক্লোজ ফাংশন
+        function openModal(modalId) { document.getElementById(modalId).style.display = 'flex'; document.getElementById('myDropdown').style.display = 'none'; }
+        function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
+
+        document.addEventListener('click', function(e){
+            let searchInput = document.getElementById('cat-search'); let sugBox = document.getElementById('suggestion-box');
+            if(searchInput && !searchInput.contains(e.target) && !sugBox.contains(e.target)) { sugBox.style.display = 'none'; }
+            let dropdown = document.getElementById('myDropdown');
+            if(dropdown && !dropdown.contains(e.target) && !e.target.classList.contains('three-lines')) { dropdown.style.display = 'none'; }
+        });
+
+        let checkApprovalInterval = null; let globalPendingPhone = "";
+        function toggleForm(type) { if(type === 'register') { document.getElementById('login-form').style.display = 'none'; document.getElementById('register-form').style.display = 'block'; } else { document.getElementById('login-form').style.display = 'block'; document.getElementById('register-form').style.display = 'none'; } document.getElementById('msg').innerText = ""; }
+
+        function login() {
+            let u = document.getElementById('user').value; let p = document.getElementById('pass').value;
+            fetch('/login', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({username: u, password: p}) })
+            .then(res => res.json()).then(data => { document.getElementById('msg').innerText = data.message; if(data.status === "SUCCESS") { setTimeout(() => { location.reload(); }, 1000); } });
+        }
+
+        function submitForApproval() {
+            let n = document.getElementById('reg-name').value.trim(); let ph = document.getElementById('reg-phone').value.trim(); let gm = document.getElementById('reg-gmail').value.trim(); let pa = document.getElementById('reg-pass').value.trim();
+            if(!n || !ph || !gm || !pa) { alert("Please fill up all fields!"); return; }
+            globalPendingPhone = ph;
+            fetch('/register_request', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({name: n, phone: ph, gmail: gm, password: pa}) })
+            .then(res => res.json()).then(data => { if(data.status === "SUCCESS") { document.getElementById('register-form').style.display = 'none'; document.getElementById('processing-form').style.display = 'block'; checkApprovalInterval = setInterval(pollApprovalStatus, 2000); } else { document.getElementById('msg').innerText = data.message; } });
+        }
+
+        function pollApprovalStatus() {
+            fetch('/check_approval_status', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({phone: globalPendingPhone}) })
+            .then(res => res.json()).then(data => { if(data.status === "APPROVED") { clearInterval(checkApprovalInterval); location.reload(); } else if(data.status === "REJECTED") { clearInterval(checkApprovalInterval); alert("❌ Your request was rejected."); location.reload(); } });
+        }
+
+        function handleApproval(phoneNum, actionType) { fetch('/admin/handle_request', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({target_user: phoneNum, action: actionType}) }).then(res => res.json()).then(data => { alert(data.message); location.reload(); }); }
+        
+        function connectGoogle() { 
+            let btn = document.getElementById('yt-connect-btn'); btn.innerText = "Connecting Google API Server...";
+            fetch('/customer/auth_youtube', { method: 'POST' }).then(res => res.json()).then(data => { location.reload(); });
+        }
+
+        function deleteCustomer(phoneNum) { if(confirm("Permanently delete user from database?")) { fetch('/admin/delete_user', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({target_user: phoneNum}) }).then(res => res.json()).then(data => { alert(data.message); location.reload(); }); } }
+        function toggleStatus(phoneNum, actionType) { fetch('/admin/toggle_status', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({target_user: phoneNum, action: actionType}) }).then(res => res.json()).then(data => { alert(data.message); location.reload(); }); }
+
+        function setCategory() {
+            let cat = document.getElementById('cat-search').value.trim(); if(!cat) { alert("Please select a category!"); return; }
+            fetch('/customer/set_category', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({category: cat}) }).then(res => res.json()).then(data => { location.reload(); });
+        }
+
+        function fetchLiveAiTracking() {
+            if(document.getElementById('live-topic')) {
+                fetch('/get_live_ai_data')
+                .then(res => res.json()).then(data => {
+                    document.getElementById('live-topic').innerText = data.topic;
+                    document.getElementById('live-title').innerText = data.title;
+                    document.getElementById('live-desc').innerText = data.desc_thumb;
+                    document.getElementById('live-length').innerText = data.length;
+                    document.getElementById('live-time').innerText = data.upload_time;
+                    document.getElementById('live-status').innerText = data.status;
+                });
+            }
+        }
+        setInterval(fetchLiveAiTracking, 5000);
+        window.onload = fetchLiveAiTracking;
+    </script>
+</body>
+</html>
