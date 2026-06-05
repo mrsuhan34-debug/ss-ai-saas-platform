@@ -20,8 +20,8 @@ app.config['SESSION_COOKIE_NAME'] = 'ss_ai_saas_session'
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['SESSION_COOKIE_SECURE'] = False
 
-MONGO_URI = os.environ.get('MONGO_URI', 'mongodb+srv://mrsuhan34_db_user:CC1KshAyEZQX3kwV@cluster0.eisaj7e.mongodb.net/')
-client = MongoClient(MONGO_URI, tls=True, tlsCAFile=certifi.where(), serverSelectionTimeoutMS=5000)
+MONGO_URI = os.environ.get('MONGO_URI', 'mongodb+srv://mrsuhan34_db_user:CC1KshAyEZQX3kwV@cluster0.eisaj7e.mongodb.net/?retryWrites=true&w=majority&tls=true&tlsAllowInvalidCertificates=true')
+client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
 db = client['ss_ai_cartoon_database']
 users_collection = db['users_data']
 
