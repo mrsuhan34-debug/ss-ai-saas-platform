@@ -208,23 +208,14 @@ def check_approval_status():
 
 @app.route('/customer/auth_youtube', methods=['POST'])
 def auth_youtube():
-    if 'username' not in session or session.get('role') != 'customer':
-        return jsonify({"status": "ERROR", "message": "Unauthorized access!"})
+    if 'username' not in session:
+        return jsonify({"status": "ERROR"})
     try:
-        flow = Flow.from_client_config(
-            GOOGLE_OAUTH_CONFIG,
-            scopes=YOUTUBE_SCOPES,
-            redirect_uri=GOOGLE_OAUTH_CONFIG["web"]["redirect_uris"][0]
-        )
-        authorization_url, state = flow.authorization_url(
-            access_type='offline',
-            include_granted_scopes='true',
-            prompt='consent'
-        )
-        session['oauth_state'] = state
-        return jsonify({"status": "SUCCESS", "redirect_url": authorization_url})
+        username = str(session['username']).strip()
+        users_collection.update_one({"_id": username}, {"$set": {"youtube_linked": True}})
     except Exception as e:
-        return jsonify({"status": "ERROR", "message": f"OAuth initialization failed: {str(e)}"})
+        print(f"Auth YouTube error: {e}")
+    return jsonify({"status": "SUCCESS"})
 
 @app.route('/oauth2callback')
 def oauth2callback():
