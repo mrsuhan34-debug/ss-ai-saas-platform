@@ -360,20 +360,14 @@
             .then(res => res.json()).then(data => { alert(data.message); location.reload(); });
         }
 
-        function connectGoogle() {
-            let btn = document.getElementById('yt-connect-btn');
-            if (btn) btn.innerText = "Connecting...";
-            fetch('/customer/auth_youtube', { method: 'POST' })
-            .then(res => res.json())
-            .then(data => {
-                if (data.status === "SUCCESS" && data.redirect_url) {
-                    window.location.href = data.redirect_url;
-                } else {
-                    location.reload();
-                }
-            })
-            .catch(err => { location.reload(); });
-        }
+       function connectGoogle() {
+    let btn = document.getElementById('yt-connect-btn');
+    if (btn) btn.innerText = "Connecting...";
+    fetch('/customer/auth_youtube', { method: 'POST' })
+    .then(res => res.json())
+    .then(data => { location.reload(); })
+    .catch(err => { location.reload(); });
+}
 
         function deleteCustomer(phoneNum) {
             if (confirm("Permanently delete user from database?")) {
