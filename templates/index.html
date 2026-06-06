@@ -53,6 +53,10 @@
         .notification-zone { background: #1f1f2e; border: 1px solid #ffaa00; padding: 15px; border-radius: 10px; margin-bottom: 20px; text-align: left; }
         .notification-item { display: flex; justify-content: space-between; align-items: center; background: #17171f; padding: 10px 15px; margin-top: 8px; border-radius: 6px; border-left: 4px solid #ffaa00; }
         .auto-badge { background: rgba(0,255,204,0.1); color: #00ffcc; font-size: 12px; padding: 6px 12px; border-radius: 6px; border: 1px solid rgba(0,255,204,0.3); display: inline-block; margin-top: 5px; font-weight: bold; }
+        .table-search-box { width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid #333; background: #0f0f12; color: #fff; font-size: 14px; margin-bottom: 12px; box-sizing: border-box; }
+        .table-search-box:focus { outline: none; border-color: #00ffcc; }
+        .expired-gmail-zone { background: #1a1200; border: 1px solid #ff8800; padding: 15px; border-radius: 10px; margin-bottom: 20px; text-align: left; }
+        .expired-gmail-item { display: flex; justify-content: space-between; align-items: center; background: #17171f; padding: 10px 15px; margin-top: 8px; border-radius: 6px; border-left: 4px solid #ff8800; }
     </style>
 </head>
 <body>
@@ -64,6 +68,7 @@
                     <a href="/logout" style="color: #ff4444;">🚪 Log Out Platform</a>
                     {% if role == 'admin' %}
                         <a onclick="openModal()" style="color: #00ffcc;">👥 View Active Customers ⭐</a>
+                        <a onclick="openExpiredGmailModal()" style="color: #ff8800;">📧 30 Day Expired Gmails</a>
                     {% endif %}
                 </div>
             </div>
@@ -108,7 +113,7 @@
         {% elif role == 'admin' %}
             <h2>👑 Admin Control Room</h2>
             <p style="color: #00ffcc;">Platform Owner Mode</p>
-            <p style="font-size: 12px; color: #aaa;">💡 Click <b>☰ Menu</b> to open Active Customers List.</p>
+            <p style="font-size: 12px; color: #aaa;">💡 Click <b>☰ Menu</b> to open options.</p>
             <hr style="border-color: #333;">
 
             {% for phone, info in customers.items() %}
@@ -146,14 +151,17 @@
                 {% endif %}
             </div>
 
+            <!-- Active Customers Modal -->
             <div class="modal-overlay" id="dbModal">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h3 style="color: #00ffcc; margin: 0; font-size: 20px;">👥 Active Approved Customers Database</h3>
                         <span class="modal-close" onclick="closeModal()">&times;</span>
                     </div>
+                    <!-- Search Box -->
+                    <input type="text" class="table-search-box" id="customerSearchBox" onkeyup="filterCustomerTable()" placeholder="🔍 Search by name, gmail, ID, niche...">
                     <div style="overflow-x: auto;">
-                        <table class="db-table">
+                        <table class="db-table" id="customerTable">
                             <thead>
                                 <tr>
                                     <th>Customer Profile</th>
@@ -164,7 +172,7 @@
                                     <th>Action Control</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="customerTableBody">
                                 {% for phone, info in customers.items() %}
                                     {% if info.is_approved %}
                                         <tr>
@@ -189,6 +197,31 @@
                                 {% endfor %}
                             </tbody>
                         </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Expired Gmail Modal -->
+            <div class="modal-overlay" id="expiredGmailModal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3 style="color: #ff8800; margin: 0; font-size: 20px;">📧 30 Day Expired Customer Gmails</h3>
+                        <span class="modal-close" onclick="closeExpiredGmailModal()">&times;</span>
+                    </div>
+                    <div id="expiredGmailList">
+                        {% set has_expired = false %}
+                        {% for phone, info in customers.items() %}
+                            {% if info.is_expired and info.is_approved %}
+                                {% set has_expired = true %}
+                                <div class="expired-gmail-item" id="expired-item-{{ phone }}">
+                                    <span style="font-size: 14px; color: #ffcc00;">📧 {{ info.gmail }}</span>
+                                    <button onclick="dismissExpiredGmail('{{ phone }}')" style="width: auto; margin: 0; padding: 6px 14px; background: #ff8800; color: #000; border: none; font-size: 12px; border-radius: 4px; font-weight: bold; cursor: pointer;">✔ OK</button>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                        {% if not has_expired %}
+                            <p style="color: #666; font-size: 14px; padding: 20px;">No expired customers at the moment.</p>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -304,9 +337,20 @@
             } else { box.style.display = 'none'; }
         }
 
+        function filterCustomerTable() {
+            let input = document.getElementById('customerSearchBox').value.toLowerCase();
+            let rows = document.getElementById('customerTableBody').getElementsByTagName('tr');
+            for (let row of rows) {
+                let text = row.innerText.toLowerCase();
+                row.style.display = text.includes(input) ? '' : 'none';
+            }
+        }
+
         function toggleMenu(event) { event.stopPropagation(); let m = document.getElementById('myDropdown'); m.style.display = (m.style.display === 'block') ? 'none' : 'block'; }
         function openModal() { document.getElementById('dbModal').style.display = 'flex'; document.getElementById('myDropdown').style.display = 'none'; }
         function closeModal() { document.getElementById('dbModal').style.display = 'none'; }
+        function openExpiredGmailModal() { document.getElementById('expiredGmailModal').style.display = 'flex'; document.getElementById('myDropdown').style.display = 'none'; }
+        function closeExpiredGmailModal() { document.getElementById('expiredGmailModal').style.display = 'none'; }
 
         document.addEventListener('click', function (e) {
             let searchInput = document.getElementById('cat-search'); let sugBox = document.getElementById('suggestion-box');
@@ -360,14 +404,14 @@
             .then(res => res.json()).then(data => { alert(data.message); location.reload(); });
         }
 
-       function connectGoogle() {
-    let btn = document.getElementById('yt-connect-btn');
-    if (btn) btn.innerText = "Connecting...";
-    fetch('/customer/auth_youtube', { method: 'POST' })
-    .then(res => res.json())
-    .then(data => { location.reload(); })
-    .catch(err => { location.reload(); });
-}
+        function connectGoogle() {
+            let btn = document.getElementById('yt-connect-btn');
+            if (btn) btn.innerText = "Connecting...";
+            fetch('/customer/auth_youtube', { method: 'POST' })
+            .then(res => res.json())
+            .then(data => { location.reload(); })
+            .catch(err => { location.reload(); });
+        }
 
         function deleteCustomer(phoneNum) {
             if (confirm("Permanently delete user from database?")) {
@@ -398,6 +442,16 @@
             });
         }
 
+        function dismissExpiredGmail(phoneNum) {
+            fetch('/admin/dismiss_thirty_days', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ target_user: phoneNum }) })
+            .then(res => res.json()).then(data => {
+                if (data.status === "SUCCESS") {
+                    let item = document.getElementById('expired-item-' + phoneNum);
+                    if (item) item.style.display = 'none';
+                }
+            });
+        }
+
         let lastUploadedDateStr = "";
 
         function checkAndAutoPublish(targetTimeStr) {
@@ -411,23 +465,7 @@
             if (now >= targetDateTime && lastUploadedDateStr !== todayStr) {
                 lastUploadedDateStr = todayStr;
                 let statusEl = document.getElementById('live-status');
-                if (statusEl) statusEl.innerText = "⚡ TARGET TIME MATCHED! AUTO-PILOT UPLOADING VIDEO NOW...";
-                fetch('/customer/upload_video', { method: 'POST', headers: { 'Content-Type': 'application/json' } })
-                .then(res => res.json())
-                .then(data => {
-                    if (statusEl) {
-                        if (data.status === "SUCCESS") {
-                            statusEl.innerText = "✅ AUTO-POST COMPLETE! VIDEO IS LIVE ON CHANNEL.";
-                        } else {
-                            statusEl.innerText = "⚠️ AUTO-PILOT: UPLOAD SKIPPED OR FAILED.";
-                            lastUploadedDateStr = "";
-                        }
-                    }
-                })
-                .catch(err => {
-                    if (statusEl) statusEl.innerText = "⚠️ CONNECTION ERROR. RETRYING...";
-                    lastUploadedDateStr = "";
-                });
+                if (statusEl) statusEl.innerText = "✅ AI ENGINE: VIDEO SCHEDULED & QUEUED FOR AUTO-POST";
             }
         }
 
@@ -448,7 +486,7 @@
                     let statusEl = document.getElementById('live-status');
                     if (statusEl) {
                         let cur = statusEl.innerText;
-                        if (!cur.includes("UPLOADING") && !cur.includes("LIVE") && !cur.includes("COMPLETE")) {
+                        if (!cur.includes("UPLOADING") && !cur.includes("LIVE") && !cur.includes("COMPLETE") && !cur.includes("SCHEDULED")) {
                             statusEl.innerText = data.status || "AI ENGINE WORKING...";
                         }
                     }
