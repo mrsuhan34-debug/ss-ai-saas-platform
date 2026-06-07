@@ -48,7 +48,7 @@ GOOGLE_OAUTH_CONFIG = {
         "token_uri": "https://oauth2.googleapis.com/token",
         "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
         "client_secret": os.environ.get('GOOGLE_CLIENT_SECRET', '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').strip(),
-        "redirect_uris": ["https://flask-hello-world-jbuj.onrender.com/oauth2callback"]
+        "redirect_uris": ["https://ss-ai-saas-platform.onrender.com/oauth2callback"]
     }
 }
 
@@ -64,13 +64,48 @@ def keep_alive():
     time.sleep(60)
     while True:
         try:
-            urllib.request.urlopen("https://flask-hello-world-jbuj.onrender.com/ping")
+            urllib.request.urlopen("https://ss-ai-saas-platform.onrender.com/ping")
         except:
             pass
         time.sleep(600)
 
 t = threading.Thread(target=keep_alive, daemon=True)
 t.start()
+
+def get_best_upload_time(user_info):
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    saved_date = user_info.get("best_time_date", "")
+    saved_time = user_info.get("best_time_value", "")
+
+    if saved_date == today_str and saved_time:
+        return saved_time
+
+    current_time = datetime.now()
+    current_total = current_time.hour * 60 + current_time.minute + 30
+
+    time_slots = [7*60, 8*60, 9*60, 10*60, 11*60, 12*60, 13*60,
+                  14*60, 15*60, 16*60, 17*60, 18*60, 19*60, 20*60, 21*60, 22*60]
+    future_slots = [s for s in time_slots if s > current_total]
+
+    if future_slots:
+        best_slot = random.choice(future_slots[:3])
+        best_hour = best_slot // 60
+        best_minute = random.choice([0, 15, 30, 45])
+        traffic_time = current_time.replace(hour=best_hour, minute=best_minute, second=0, microsecond=0)
+        best_time = f"TODAY AT {traffic_time.strftime('%I:%M %p')} (Optimized Live Channel Traffic)"
+    else:
+        traffic_time = (current_time + timedelta(days=1)).replace(hour=8, minute=0, second=0, microsecond=0)
+        best_time = f"TOMORROW AT {traffic_time.strftime('%I:%M %p')} (Optimized Live Channel Traffic)"
+
+    try:
+        users_collection.update_one(
+            {"_id": user_info["_id"]},
+            {"$set": {"best_time_date": today_str, "best_time_value": best_time}}
+        )
+    except:
+        pass
+
+    return best_time
 
 def get_all_customers_from_mongo():
     customers = {}
@@ -187,7 +222,9 @@ def register_request():
             "youtube_linked": False,
             "approved_at": "",
             "role": "customer",
-            "thirty_days_dismissed": False
+            "thirty_days_dismissed": False,
+            "best_time_date": "",
+            "best_time_value": ""
         })
         return jsonify({"status": "SUCCESS"})
     except Exception as e:
@@ -220,7 +257,7 @@ def auth_youtube():
 @app.route('/oauth2callback')
 def oauth2callback():
     if 'oauth_state' not in session:
-        return "Authorization failed: State token missing.", 400
+        return "Authorization failed.", 400
     try:
         flow = Flow.from_client_config(
             GOOGLE_OAUTH_CONFIG,
@@ -231,11 +268,10 @@ def oauth2callback():
         flow.fetch_token(authorization_response=request.url)
         credentials = flow.credentials
         youtube = build('youtube', 'v3', credentials=credentials)
-        request_api = youtube.channels().list(part="snippet,statistics", mine=True)
-        response = request_api.execute()
+        response = youtube.channels().list(part="snippet", mine=True).execute()
         if not response.get('items'):
-            return "<h1>Error: No YouTube Channel found!</h1><a href='/'>Go Back</a>"
-        channel_name = response['items'][0]['snippet'].get('title', 'Unknown Channel')
+            return "<h1>No YouTube Channel found!</h1><a href='/'>Go Back</a>"
+        channel_name = response['items'][0]['snippet'].get('title', 'Unknown')
         username = str(session.get('username')).strip()
         users_collection.update_one(
             {"_id": username},
@@ -243,7 +279,7 @@ def oauth2callback():
         )
         return redirect(url_for('index'))
     except Exception as e:
-        return f"<h1>OAuth Callback Error</h1><p>{str(e)}</p><a href='/'>Go Back</a>", 500
+        return f"<h1>OAuth Error</h1><p>{str(e)}</p><a href='/'>Go Back</a>", 500
 
 @app.route('/customer/set_category', methods=['POST'])
 def set_category():
@@ -260,11 +296,11 @@ def set_category():
 @app.route('/customer/upload_video', methods=['POST'])
 def upload_video():
     if 'username' not in session or session.get('role') != 'customer':
-        return jsonify({"status": "ERROR", "message": "Unauthorized access!"})
+        return jsonify({"status": "ERROR", "message": "Unauthorized!"})
     username = str(session['username']).strip()
     user_info = users_collection.find_one({"_id": username})
     if not user_info or not user_info.get('youtube_linked') or not user_info.get('youtube_token'):
-        return jsonify({"status": "ERROR", "message": "YouTube account not linked!"})
+        return jsonify({"status": "ERROR", "message": "YouTube not linked!"})
     try:
         from google.oauth2.credentials import Credentials
         token_data = json.loads(user_info.get('youtube_token'))
@@ -279,53 +315,36 @@ def upload_video():
             with open(video_file_path, "wb") as f:
                 f.write(b"\x00\x00\x00\x18ftypmp42")
         category = str(user_info.get('category', '')).lower()
-        current_time = datetime.now()
-        try:
-            random.seed(int(str(user_info.get('_id', '123')).strip()) + current_time.day)
-        except:
-            random.seed(current_time.day)
-        min_future_minutes = current_time.hour * 60 + current_time.minute + 30
-        time_slots = [7*60, 8*60, 9*60, 10*60, 11*60, 12*60, 13*60, 14*60, 15*60, 16*60, 17*60, 18*60, 19*60, 20*60, 21*60, 22*60]
-        future_slots = [s for s in time_slots if s > min_future_minutes]
-        if future_slots:
-            best_slot = random.choice(future_slots[:3])
-            best_hour = best_slot // 60
-            best_minute = random.choice([0, 15, 30, 45])
-            traffic_time = current_time.replace(hour=best_hour, minute=best_minute, second=0, microsecond=0)
-            best_time = f"TODAY AT {traffic_time.strftime('%I:%M %p')} (Optimized Live Channel Traffic)"
-        else:
-            traffic_time = (current_time + timedelta(days=1)).replace(hour=8, minute=0, second=0, microsecond=0)
-            best_time = f"TOMORROW AT {traffic_time.strftime('%I:%M %p')} (Optimized Live Channel Traffic)"
-
         if "cartoon" in category or "animation" in category:
-            titles = ["সোনার পাখি ও জাদুকরী রাজা | Bangla Cartoon Stories 2026", "ভুতুড়ে বিলের রহস্যময়ী ডাইনি! | Bengali Animated Story", "টুনটুনি পাখি বনাম চালাক শেয়াল! নতুন রূপকথার গল্প"]
-            descs = ["আজ রূপনগরের জাদুকরী পাখির নতুন পর্ব।", "ভুতুড়ে বিলের গভীর রাতের কার্টুন গল্প।", "চালাক শেয়ালকে উচিত শিক্ষা দিল টুনটুনি।"]
-        elif "gaming" in category or "esports" in category or "free fire" in category or "freefire" in category or "trending" in category:
-            titles = ["Free Fire Best Character 2026 | Bangla Gaming", "Top 10 Mobile Games 2026 | Bangladesh Gamer", "BGMI vs Free Fire Ultimate Comparison | Bangla"]
-            descs = ["Free Fire character guide 2026.", "Top mobile games review Bangladesh.", "BGMI vs Free Fire comparison."]
-        elif "islamic" in category or "motivat" in category or "quran" in category:
-            titles = ["আল্লাহর উপর ভরসা রাখো | Islamic Motivation 2026", "জীবন বদলে যাবে এই ১০টি কথায় | Bangla Islamic Video", "সফলতার রহস্য | Islamic Life Success Story Bangla"]
-            descs = ["ইসলামিক অনুপ্রেরণামূলক ভিডিও।", "ইসলামিক জীবনধারার সেরা উক্তি।", "সফলতার পথে ইসলামিক গাইড।"]
+            titles = ["সোনার পাখি ও জাদুকরী রাজা | Bangla Cartoon 2026", "ভুতুড়ে বিলের ডাইনি | Bengali Animated Story", "টুনটুনি বনাম শেয়াল | Bangla Cartoon"]
+            descs = ["জাদুকরী পাখির নতুন পর্ব।", "ভুতুড়ে বিলের গল্প।", "টুনটুনির বুদ্ধির গল্প।"]
+        elif "gaming" in category or "free fire" in category or "esports" in category:
+            titles = ["Free Fire Best Tips 2026 | Bangla", "Top Mobile Games 2026 | Bangla", "BGMI vs Free Fire | Bangla"]
+            descs = ["Free Fire tips and tricks.", "Top mobile games guide.", "Game comparison guide."]
+        elif "islamic" in category or "quran" in category:
+            titles = ["Islamic Motivation 2026 | Bangla", "ইসলামিক উক্তি | Bangla", "সফলতার পথ | Islamic Bangla"]
+            descs = ["ইসলামিক অনুপ্রেরণা।", "ইসলামিক উক্তি সংকলন।", "ইসলামিক জীবনধারা।"]
         else:
-            titles = ["The Future is Here: AI Systems of 2026!", "Faceless YouTube Channel in 24 Hours", "Cinematic Visuals: Topaz AI Tutorial"]
-            descs = ["Complete guide on 2026 AI tools.", "Faceless workflow for viral growth.", "Enhance footage with AI processing."]
-
+            titles = ["AI Systems of 2026 | Bangla", "Faceless YouTube Channel Guide", "Topaz AI Tutorial 2026"]
+            descs = ["AI tools guide 2026.", "Faceless channel tips.", "AI video enhancement."]
         idx = random.randint(0, len(titles) - 1)
+        best_time = get_best_upload_time(user_info)
         body = {
             'snippet': {
                 'title': titles[idx],
-                'description': descs[idx] + f"\n\nUploaded via SS AI SaaS Platform. Best Time: {best_time}",
-                'tags': ['bangla', 'ai', '2026', 'viral'],
+                'description': descs[idx] + f"\n\nSS AI Platform | {best_time}",
+                'tags': ['bangla', 'ai', '2026'],
                 'categoryId': '24'
             },
             'status': {'privacyStatus': 'public'}
         }
         media = MediaFileUpload(video_file_path, chunksize=-1, resumable=True, mimetype="video/mp4")
-        request_upload = youtube.videos().insert(part="snippet,status", body=body, media_body=media)
-        response_upload = request_upload.execute()
-        return jsonify({"status": "SUCCESS", "message": "Video uploaded successfully!", "youtube_id": response_upload.get('id')})
+        req = youtube.videos().insert(part="snippet,status", body=body, media_body=media)
+        resp = req.execute()
+        users_collection.update_one({"_id": username}, {"$set": {"best_time_date": "", "best_time_value": ""}})
+        return jsonify({"status": "SUCCESS", "youtube_id": resp.get('id')})
     except Exception as e:
-        return jsonify({"status": "ERROR", "message": f"Upload error: {str(e)}"})
+        return jsonify({"status": "ERROR", "message": str(e)})
 
 @app.route('/admin/handle_request', methods=['POST'])
 def handle_request():
@@ -390,28 +409,12 @@ def get_live_ai_data():
             return jsonify({"topic": "N/A", "title": "N/A", "desc_thumb": "N/A", "length": "N/A", "upload_time": "N/A", "status": "OFFLINE"})
 
         category = str(user_info.get('category', '')).lower()
-        current_time = datetime.now()
-        current_hour = current_time.hour
-        current_minute = current_time.minute
+        best_time = get_best_upload_time(user_info)
 
         try:
-            random.seed(int(str(user_info.get('_id', '123')).strip()) + current_time.day)
+            random.seed(int(str(user_info.get('_id', '123')).strip()) + datetime.now().day)
         except:
-            random.seed(current_time.day)
-
-        min_future_minutes = current_hour * 60 + current_minute + 30
-        time_slots = [7*60, 8*60, 9*60, 10*60, 11*60, 12*60, 13*60, 14*60, 15*60, 16*60, 17*60, 18*60, 19*60, 20*60, 21*60, 22*60]
-        future_slots = [s for s in time_slots if s > min_future_minutes]
-
-        if future_slots:
-            best_slot = random.choice(future_slots[:3])
-            best_hour = best_slot // 60
-            best_minute = random.choice([0, 15, 30, 45])
-            traffic_time = current_time.replace(hour=best_hour, minute=best_minute, second=0, microsecond=0)
-            best_time = f"TODAY AT {traffic_time.strftime('%I:%M %p')} (Optimized Live Channel Traffic)"
-        else:
-            traffic_time = (current_time + timedelta(days=1)).replace(hour=8, minute=0, second=0, microsecond=0)
-            best_time = f"TOMORROW AT {traffic_time.strftime('%I:%M %p')} (Optimized Live Channel Traffic)"
+            random.seed(datetime.now().day)
 
         if "cartoon" in category or "animation" in category:
             topics = ["সোনার পাখি ও জাদুকরী রূপনগর রাজ্যের কেল্লা", "ভুতুড়ে বিলের রহস্যময় ডাইনি বুড়ি", "টুনটুনি আর চালাক শেয়ালের বুদ্ধির খেলা"]
