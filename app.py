@@ -77,9 +77,11 @@ def get_best_upload_time(user_info):
     saved_date = user_info.get("best_time_date", "")
     saved_time = user_info.get("best_time_value", "")
 
-    if saved_date == today_str and saved_time:
+    # আজকের date এর জন্য save করা time থাকলে সেটাই দাও
+    if saved_date == today_str and saved_time and "TOMORROW" not in saved_time:
         return saved_time
 
+    # নতুন time calculate করো
     current_time = datetime.now()
     current_total = current_time.hour * 60 + current_time.minute + 30
 
