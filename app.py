@@ -10,6 +10,7 @@ from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 from pymongo import MongoClient
+from apscheduler.schedulers.background import BackgroundScheduler
 
 app = Flask(__name__)
 
@@ -24,6 +25,25 @@ MONGO_URI = os.environ.get('MONGO_URI', 'mongodb+srv://mrsuhan34_db_user:CC1KshA
 client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
 db = client['ss_ai_cartoon_database']
 users_collection = db['users_data']
+
+YOUTUBE_SCOPES = [
+    "https://www.googleapis.com/auth/youtube.readonly",
+    "https://www.googleapis.com/auth/youtube.upload"
+]
+
+GOOGLE_OAUTH_CONFIG = {
+    "web": {
+        "client_id": os.environ.get('GOOGLE_CLIENT_ID', '822666139852-qbq9b548gj8juh8fna5kk1vgbgvlqun2.apps.googleusercontent.com').strip(),
+        "project_id": "ss-ai-cartoon-saas",
+        "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+        "token_uri": "https://oauth2.googleapis.com/token",
+        "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+        "client_secret": os.environ.get('GOOGLE_CLIENT_SECRET', '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').strip(),
+        "redirect_uris": ["https://ss-ai-saas-platform.onrender.com/oauth2callback"]
+    }
+}
+
+os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
 def init_db_admin():
     try:
@@ -40,25 +60,6 @@ def init_db_admin():
 
 init_db_admin()
 
-GOOGLE_OAUTH_CONFIG = {
-    "web": {
-        "client_id": os.environ.get('GOOGLE_CLIENT_ID', '822666139852-qbq9b548gj8juh8fna5kk1vgbgvlqun2.apps.googleusercontent.com').strip(),
-        "project_id": "ss-ai-cartoon-saas",
-        "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-        "token_uri": "https://oauth2.googleapis.com/token",
-        "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-        "client_secret": os.environ.get('GOOGLE_CLIENT_SECRET', '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').strip(),
-        "redirect_uris": ["https://ss-ai-saas-platform.onrender.com/oauth2callback"]
-    }
-}
-
-YOUTUBE_SCOPES = [
-    "https://www.googleapis.com/auth/youtube.readonly",
-    "https://www.googleapis.com/auth/youtube.upload"
-]
-
-os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
-
 def keep_alive():
     import time
     time.sleep(60)
@@ -69,22 +70,18 @@ def keep_alive():
             pass
         time.sleep(600)
 
-t = threading.Thread(target=keep_alive, daemon=True)
-t.start()
+threading.Thread(target=keep_alive, daemon=True).start()
 
 def get_best_upload_time(user_info):
     today_str = datetime.now().strftime("%Y-%m-%d")
     saved_date = user_info.get("best_time_date", "")
     saved_time = user_info.get("best_time_value", "")
 
-    # আজকের date এর জন্য save করা time থাকলে সেটাই দাও
     if saved_date == today_str and saved_time and "TOMORROW" not in saved_time:
         return saved_time
 
-    # নতুন time calculate করো
     current_time = datetime.now()
     current_total = current_time.hour * 60 + current_time.minute + 30
-
     time_slots = [7*60, 8*60, 9*60, 10*60, 11*60, 12*60, 13*60,
                   14*60, 15*60, 16*60, 17*60, 18*60, 19*60, 20*60, 21*60, 22*60]
     future_slots = [s for s in time_slots if s > current_total]
@@ -108,6 +105,122 @@ def get_best_upload_time(user_info):
         pass
 
     return best_time
+
+def do_upload_for_user(user):
+    try:
+        from google.oauth2.credentials import Credentials
+        from google.auth.transport.requests import Request
+        token_data = json.loads(user.get('youtube_token'))
+        credentials = Credentials.from_authorized_user_info(token_data, YOUTUBE_SCOPES)
+        if credentials.expired and credentials.refresh_token:
+            credentials.refresh(Request())
+            users_collection.update_one({"_id": user["_id"]}, {"$set": {"youtube_token": credentials.to_json()}})
+        youtube = build('youtube', 'v3', credentials=credentials)
+        category = str(user.get('category', '')).lower()
+        if "cartoon" in category or "animation" in category:
+            titles = ["সোনার পাখি ও জাদুকরী রাজা | Bangla Cartoon 2026", "ভুতুড়ে বিলের ডাইনি | Bengali Animated Story", "টুনটুনি বনাম শেয়াল | Bangla Cartoon"]
+            descs = ["জাদুকরী পাখির নতুন পর্ব।", "ভুতুড়ে বিলের গল্প।", "টুনটুনির বুদ্ধির গল্প।"]
+        elif "gaming" in category or "free fire" in category or "esports" in category or "freefire" in category:
+            titles = ["Free Fire Best Tips 2026 | Bangla", "Top Mobile Games 2026 | Bangla", "BGMI vs Free Fire | Bangla"]
+            descs = ["Free Fire tips and tricks.", "Top mobile games guide.", "Game comparison guide."]
+        elif "islamic" in category or "quran" in category or "motivat" in category:
+            titles = ["Islamic Motivation 2026 | Bangla", "ইসলামিক উক্তি | Bangla", "সফলতার পথ | Islamic Bangla"]
+            descs = ["ইসলামিক অনুপ্রেরণা।", "ইসলামিক উক্তি সংকলন।", "ইসলামিক জীবনধারা।"]
+        elif "documentary" in category or "mystery" in category:
+            titles = ["Bermuda Triangle Mystery | Bangla", "Egyptian Pyramids Secrets | Bangla", "WW2 Hidden Codes | Bangla"]
+            descs = ["Bermuda Triangle secrets.", "Egyptian pyramid mystery.", "World War 2 codes."]
+        elif "cooking" in category or "recipe" in category or "food" in category:
+            titles = ["বাংলার সেরা রেসিপি 2026", "১৫ মিনিটে ভর্তা রেসিপি | Bangla", "ইফতার রেসিপি ২০২৬ | Bangla"]
+            descs = ["বাংলাদেশের রান্নার রেসিপি।", "দ্রুত ভর্তা রেসিপি।", "রমজানের ইফতার আইটেম।"]
+        elif "health" in category or "fitness" in category:
+            titles = ["সকালের রুটিন | Morning Routine Bangla", "ডায়াবেটিস নিয়ন্ত্রণ | Bangla", "ব্যায়াম গাইড | Workout Bangla 2026"]
+            descs = ["সকালের স্বাস্থ্যকর অভ্যাস।", "ডায়াবেটিস টিপস।", "দৈনিক ব্যায়ামের গাইড।"]
+        elif "kids" in category or "rhyme" in category or "children" in category:
+            titles = ["আম পাকা জাম পাকা | Bangla Rhymes 2026", "নতুন বাংলা ছড়া | Kids Song 2026", "রঙিন দুনিয়া | Colorful Kids Video"]
+            descs = ["শিশুদের মজার বাংলা ছড়া।", "নতুন বাংলা ছড়া।", "শিশুদের শেখার ভিডিও।"]
+        elif "business" in category or "finance" in category or "entrepreneur" in category:
+            titles = ["৫০০০ টাকায় ব্যবসা | Small Business Bangla", "অনলাইন ব্যবসার আইডিয়া | Bangla 2026", "ফ্রিল্যান্সিং গাইড | Bangla Tutorial"]
+            descs = ["কম টাকায় লাভজনক ব্যবসা।", "অনলাইন ব্যবসার গাইড।", "ফ্রিল্যান্সিং শুরু করার গাইড।"]
+        elif "travel" in category or "vlog" in category:
+            titles = ["বাংলাদেশের লুকানো সৌন্দর্য | Travel 2026", "সুন্দরবন ভ্রমণ | Sundarban Vlog", "সেন্টমার্টিন ভ্রমণ | Travel Vlog"]
+            descs = ["বাংলাদেশের অজানা স্থান।", "সুন্দরবনের অ্যাডভেঞ্চার।", "সেন্টমার্টিনের ট্রাভেল ভ্লগ।"]
+        elif "farming" in category or "agriculture" in category:
+            titles = ["আধুনিক সবজি চাষ | Farming Bangla 2026", "হাইব্রিড ধান চাষ | Rice Farming Bangla", "ছাদ বাগান গাইড | Rooftop Garden"]
+            descs = ["আধুনিক সবজি চাষের গাইড।", "হাইব্রিড ধান চাষ।", "ছাদ বাগান টিউটোরিয়াল।"]
+        elif "tech" in category or "review" in category or "gadget" in category:
+            titles = ["Best Budget Phone 2026 | Bangla Review", "5 AI Tools Replacing Humans | Bangla", "iPhone vs Samsung 2026 | Bangla"]
+            descs = ["সেরা বাজেট স্মার্টফোন রিভিউ।", "AI tools guide.", "Phone comparison guide."]
+        elif "horror" in category or "bhoot" in category:
+            titles = ["ভুতুড়ে বাড়ির গল্প | Horror Story Bangla", "রাত ৩টার রহস্য | Midnight Horror Bangla", "সত্যিকারের ভূত | Real Ghost Story Bangla"]
+            descs = ["ভয়ংকর ভুতুড়ে স্থানের গল্প।", "রাতের রহস্যময় ঘটনা।", "সত্যিকারের ভূতের অভিজ্ঞতা।"]
+        else:
+            titles = ["AI Systems 2026 | Bangla", "Faceless YouTube Channel Guide", "Topaz AI Tutorial 2026"]
+            descs = ["AI tools guide 2026.", "Faceless channel tips.", "AI video enhancement."]
+
+        idx = random.randint(0, len(titles) - 1)
+        today_str = datetime.now().strftime("%Y-%m-%d")
+        best_time = user.get("best_time_value", "")
+        video_file_path = "output.mp4"
+        if not os.path.exists(video_file_path):
+            with open(video_file_path, "wb") as f:
+                f.write(b"\x00\x00\x00\x18ftypmp42")
+        body = {
+            'snippet': {
+                'title': titles[idx],
+                'description': descs[idx] + f"\n\nSS AI Platform | {best_time}",
+                'tags': ['bangla', 'ai', '2026', 'viral'],
+                'categoryId': '24'
+            },
+            'status': {'privacyStatus': 'public'}
+        }
+        media = MediaFileUpload(video_file_path, chunksize=-1, resumable=True, mimetype="video/mp4")
+        req = youtube.videos().insert(part="snippet,status", body=body, media_body=media)
+        resp = req.execute()
+        users_collection.update_one(
+            {"_id": user["_id"]},
+            {"$set": {"last_upload_date": today_str, "best_time_date": "", "best_time_value": ""}}
+        )
+        print(f"✅ Auto uploaded for {user['_id']}: {resp.get('id')}")
+    except Exception as e:
+        print(f"❌ Upload error for {user.get('_id')}: {e}")
+
+def auto_upload_all_customers():
+    try:
+        today_str = datetime.now().strftime("%Y-%m-%d")
+        current_time = datetime.now()
+        all_customers = users_collection.find({
+            "role": "customer",
+            "is_approved": True,
+            "is_blocked": {"$ne": True},
+            "youtube_linked": True,
+            "youtube_token": {"$exists": True}
+        })
+        for user in all_customers:
+            try:
+                saved_date = user.get("best_time_date", "")
+                saved_time = user.get("best_time_value", "")
+                already_uploaded = user.get("last_upload_date", "") == today_str
+                if already_uploaded:
+                    continue
+                if saved_date != today_str or not saved_time or "TOMORROW" in saved_time:
+                    continue
+                time_part = saved_time.replace("TODAY AT", "").replace("(Optimized Live Channel Traffic)", "").strip()
+                try:
+                    target_dt = datetime.strptime(today_str + " " + time_part, "%Y-%m-%d %I:%M %p")
+                except:
+                    continue
+                diff = (current_time - target_dt).total_seconds()
+                if 0 <= diff <= 600:
+                    print(f"🚀 Time matched for {user['_id']} — uploading...")
+                    do_upload_for_user(user)
+            except Exception as ue:
+                print(f"❌ User loop error {user.get('_id')}: {ue}")
+    except Exception as e:
+        print(f"❌ Scheduler error: {e}")
+
+scheduler = BackgroundScheduler()
+scheduler.add_job(auto_upload_all_customers, 'interval', minutes=5)
+scheduler.start()
 
 def get_all_customers_from_mongo():
     customers = {}
@@ -226,7 +339,8 @@ def register_request():
             "role": "customer",
             "thirty_days_dismissed": False,
             "best_time_date": "",
-            "best_time_value": ""
+            "best_time_value": "",
+            "last_upload_date": ""
         })
         return jsonify({"status": "SUCCESS"})
     except Exception as e:
@@ -303,50 +417,8 @@ def upload_video():
     user_info = users_collection.find_one({"_id": username})
     if not user_info or not user_info.get('youtube_linked') or not user_info.get('youtube_token'):
         return jsonify({"status": "ERROR", "message": "YouTube not linked!"})
-    try:
-        from google.oauth2.credentials import Credentials
-        token_data = json.loads(user_info.get('youtube_token'))
-        credentials = Credentials.from_authorized_user_info(token_data, YOUTUBE_SCOPES)
-        if credentials.expired and credentials.refresh_token:
-            from google.auth.transport.requests import Request
-            credentials.refresh(Request())
-            users_collection.update_one({"_id": username}, {"$set": {"youtube_token": credentials.to_json()}})
-        youtube = build('youtube', 'v3', credentials=credentials)
-        video_file_path = "output.mp4"
-        if not os.path.exists(video_file_path):
-            with open(video_file_path, "wb") as f:
-                f.write(b"\x00\x00\x00\x18ftypmp42")
-        category = str(user_info.get('category', '')).lower()
-        if "cartoon" in category or "animation" in category:
-            titles = ["সোনার পাখি ও জাদুকরী রাজা | Bangla Cartoon 2026", "ভুতুড়ে বিলের ডাইনি | Bengali Animated Story", "টুনটুনি বনাম শেয়াল | Bangla Cartoon"]
-            descs = ["জাদুকরী পাখির নতুন পর্ব।", "ভুতুড়ে বিলের গল্প।", "টুনটুনির বুদ্ধির গল্প।"]
-        elif "gaming" in category or "free fire" in category or "esports" in category:
-            titles = ["Free Fire Best Tips 2026 | Bangla", "Top Mobile Games 2026 | Bangla", "BGMI vs Free Fire | Bangla"]
-            descs = ["Free Fire tips and tricks.", "Top mobile games guide.", "Game comparison guide."]
-        elif "islamic" in category or "quran" in category:
-            titles = ["Islamic Motivation 2026 | Bangla", "ইসলামিক উক্তি | Bangla", "সফলতার পথ | Islamic Bangla"]
-            descs = ["ইসলামিক অনুপ্রেরণা।", "ইসলামিক উক্তি সংকলন।", "ইসলামিক জীবনধারা।"]
-        else:
-            titles = ["AI Systems of 2026 | Bangla", "Faceless YouTube Channel Guide", "Topaz AI Tutorial 2026"]
-            descs = ["AI tools guide 2026.", "Faceless channel tips.", "AI video enhancement."]
-        idx = random.randint(0, len(titles) - 1)
-        best_time = get_best_upload_time(user_info)
-        body = {
-            'snippet': {
-                'title': titles[idx],
-                'description': descs[idx] + f"\n\nSS AI Platform | {best_time}",
-                'tags': ['bangla', 'ai', '2026'],
-                'categoryId': '24'
-            },
-            'status': {'privacyStatus': 'public'}
-        }
-        media = MediaFileUpload(video_file_path, chunksize=-1, resumable=True, mimetype="video/mp4")
-        req = youtube.videos().insert(part="snippet,status", body=body, media_body=media)
-        resp = req.execute()
-        users_collection.update_one({"_id": username}, {"$set": {"best_time_date": "", "best_time_value": ""}})
-        return jsonify({"status": "SUCCESS", "youtube_id": resp.get('id')})
-    except Exception as e:
-        return jsonify({"status": "ERROR", "message": str(e)})
+    do_upload_for_user(user_info)
+    return jsonify({"status": "SUCCESS"})
 
 @app.route('/admin/handle_request', methods=['POST'])
 def handle_request():
@@ -412,6 +484,13 @@ def get_live_ai_data():
 
         category = str(user_info.get('category', '')).lower()
         best_time = get_best_upload_time(user_info)
+
+        today_str = datetime.now().strftime("%Y-%m-%d")
+        already_uploaded = user_info.get("last_upload_date", "") == today_str
+        if already_uploaded:
+            status_msg = "✅ TODAY'S VIDEO ALREADY UPLOADED TO YOUR CHANNEL!"
+        else:
+            status_msg = "AI ENGINE: CHANNEL TRAFFIC MATCHED AND QUEUED FOR AUTO-POST"
 
         try:
             random.seed(int(str(user_info.get('_id', '123')).strip()) + datetime.now().day)
@@ -496,7 +575,7 @@ def get_live_ai_data():
             "desc_thumb": descs[idx],
             "length": lengths[idx],
             "upload_time": best_time,
-            "status": "AI ENGINE: CHANNEL TRAFFIC MATCHED AND QUEUED FOR AUTO-POST"
+            "status": status_msg
         })
     except Exception as e:
         return jsonify({"topic": "Error", "title": "Error", "desc_thumb": str(e), "length": "N/A", "upload_time": "N/A", "status": "ERROR"})
