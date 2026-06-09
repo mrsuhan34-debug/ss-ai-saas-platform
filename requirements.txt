@@ -7,6 +7,4 @@ google-auth
 google-auth-oauthlib
 google-api-python-client
 APScheduler==3.10.4
-gTTS
-moviepy
-Pillow
+requests
