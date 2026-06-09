@@ -4,7 +4,7 @@ import random
 import threading
 import urllib.request
 import certifi
-import ssl
+import requests
 from datetime import datetime, timedelta
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from google_auth_oauthlib.flow import Flow
@@ -12,8 +12,6 @@ from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 from pymongo import MongoClient
 from apscheduler.schedulers.background import BackgroundScheduler
-
-# এআই ভিডিও ম্যাকিং ইঞ্জিনের জন্য প্রয়োজনীয় ফ্রি লাইব্রেরিস
 
 app = Flask(__name__)
 
@@ -109,63 +107,43 @@ def get_best_upload_time(user_info):
 
     return best_time
 
-# ================= 🎬 নতুন ফ্রি এআই ভিডিও মেকার ইঞ্জিন =================
-def generate_ai_video_file(category_name, video_title):
+# ================= 🎬 নতুন অটোমেটিক রিয়েল ভিডিও জেনারেটর =================
+def generate_real_ai_video(category_name):
     video_file_path = "output.mp4"
-    audio_file_path = "voice.mp3"
     try:
-        print(f"🤖 AI Engine: Starting auto-generation for {category_name}...")
+        print(f"🤖 AI Engine: Fetching real video clip for category: {category_name}")
         
-        # ১. ক্যাটাগরি অনুযায়ী বাংলায় রিয়েল স্ক্রিপ্ট সিলেকশন
-        if "cartoon" in category_name or "animation" in category_name:
-            script_text = f"বন্ধুরা, আজকের কার্টুন গল্পে আপনাকে স্বাগতম। আজ আমরা জানবো {video_title} এর একটি চমৎকার রহস্যময় ঘটনা। শেষ পর্যন্ত সাথে থাকুন।"
-            bg_color = (0, 255, 204) # ডাইনামিক নিয়ন গ্রিন কার্টুন থিম
-        elif "islamic" in category_name or "quran" in category_name:
-            script_text = f"আসসালামু আলাইকুম। আজকের ভিডিওর মূল বিষয় হলো {video_title}। আমাদের জীবনকে সুন্দর করতে এই কথাগুলো মেনে চলা অত্যন্ত জরুরী।"
-            bg_color = (17, 42, 34) # ইসলামিক ডিপ গ্রিন থিম
-        elif "horror" in category_name or "bhoot" in category_name:
-            script_text = f"সাবধান! রাত যখন তিনটে বাজে, তখন চারপাশের পরিবেশ কেমন অদ্ভুত হয়ে যায় না? আজ শুনুন {video_title} এর গা শিউরে ওঠা সত্য ঘটনা।"
-            bg_color = (20, 0, 0) # ভুতুড়ে ডার্ক রেড থিম
-        else:
-            script_text = f"হ্যালো বন্ধুরা, আমাদের ইনফরমেশন চ্যানেলে আপনাকে স্বাগতম। আজ আমরা আলোচনা করব {video_title} নিয়ে। ভিডিওটি ভালো লাগলে অবশ্যই সাবস্ক্রাইব করবেন।"
-            bg_color = (15, 15, 18) # স্ট্যান্ডার্ড আল্ট্রা ডার্ক থিম
-
-        # ২. gTTS দিয়ে ফ্রিতে বাংলা ভয়েসওভার (Audio) তৈরি
-        tts = gTTS(text=script_text, lang='bn', slow=False)
-        tts.save(audio_file_path)
+        # ক্যাটাগরি অনুযায়ী ফ্রিতে হাই-কোয়ালিটি সলিড মোশন ব্যাকগ্রাউন্ড ভিডিওর সোর্স লিঙ্ক
+        video_links = {
+            "cartoon": "https://assets.mixkit.co/videos/preview/mixkit-cartoon-sand-castle-on-the-beach-43187-large.mp4",
+            "horror": "https://assets.mixkit.co/videos/preview/mixkit-mysterious-foggy-forest-at-night-42239-large.mp4",
+            "gaming": "https://assets.mixkit.co/videos/preview/mixkit-holding-a-smartphone-playing-a-mobile-game-48473-large.mp4",
+            "islamic": "https://assets.mixkit.co/videos/preview/mixkit-stars-in-space-background-1611-large.mp4",
+            "general": "https://assets.mixkit.co/videos/preview/mixkit-abstract-laser-lights-background-41857-large.mp4"
+        }
         
-        # ৩. MoviePy দিয়ে লুপ ব্যাকগ্রাউন্ড এবং অডিও মার্জ করে রিয়েল MP4 তৈরি
-        audio_clip = AudioFileClip(audio_file_path)
-        duration = audio_clip.duration + 1.0 # ভয়েসের লেন্থ অনুযায়ী ভিডিওর দৈর্ঘ্য হবে অটোমেটিক
-        
-        # কালার ব্যাকগ্রাউন্ড লুপ জেনারেট
-        bg_clip = ColorClip(size=(1080, 1920), color=bg_color, duration=duration) # ফুল ১০৮০p শর্টস সাইজ
-        video_clip = bg_clip.set_audio(audio_clip)
-        
-        # ফাইনাল ভিডিও এক্সপোর্ট
-        video_clip.write_videofile(
-            video_file_path, 
-            fps=24, 
-            codec="libx264", 
-            audio_codec="aac", 
-            verbose=False, 
-            logger=None
-        )
-        
-        # টেম্পোরারি অডিও ফাইল ডিলিট করে মেমোরি ক্লিয়ার করা
-        audio_clip.close()
-        video_clip.close()
-        if os.path.exists(audio_file_path):
-            os.remove(audio_file_path)
-            
-        print("🎯 AI Engine: Video File (output.mp4) Generated Successfully with Voiceover!")
-        return True
+        # ম্যাচিং লিঙ্ক বের করা
+        target_link = video_links.get("general")
+        for key in video_links:
+            if key in str(category_name).lower():
+                target_link = video_links[key]
+                break
+                
+        # সার্ভারে ব্যাকগ্রাউন্ডে আসল MP4 ভিডিও ফাইলটি ডাউনলোড করা
+        response = requests.get(target_link, timeout=15)
+        if response.status_code == 200:
+            with open(video_file_path, "wb") as f:
+                f.write(response.content)
+            print("🎯 AI Engine: Real MP4 Video File Downloaded & Created Automatically!")
+            return True
     except Exception as e:
-        print(f"❌ AI Video Maker Engine Failed: {e}")
-        # ব্যাকআপ হিসেবে ফাঁকা ব্রোকেন ফাইল এভয়েড করতে ৮ সেকেন্ডের ডামি ফাইল রাইট
+        print(f"❌ Real Video Engine Error: {e}")
+        
+    # কোনো কারণে ইন্টারনেট ফেইল করলে ডামি ব্যাকআপ ফাইল রাখা যাতে ক্র্যাশ না করে
+    if not os.path.exists(video_file_path):
         with open(video_file_path, "wb") as f:
             f.write(b"\x00\x00\x00\x18ftypmp42")
-        return False
+    return False
 
 def do_upload_for_user(user):
     try:
@@ -192,7 +170,7 @@ def do_upload_for_user(user):
             titles = ["Bermuda Triangle Mystery | Bangla", "Egyptian Pyramids Secrets | Bangla", "WW2 Hidden Codes | Bangla"]
             descs = ["Bermuda Triangle secrets.", "Egyptian pyramid mystery.", "World War 2 codes."]
         elif "cooking" in category or "recipe" in category or "food" in category:
-            titles = ["বাংলার সেরা রেসিпи 2026", "১৫ মিনিটে ভর্তা রেসিপি | Bangla", "ইফতার রেসিপি ২০২৬ | Bangla"]
+            titles = ["বাংলার সেরা রেসিপি 2026", "১৫ মিনিটে ভর্তা রেসিপি | Bangla", "ইফতার রেসিপি ২০২৬ | Bangla"]
             descs = ["বাংলাদেশের রান্নার রেসিপি।", "দ্রুত ভর্তা রেসিপি।", "রমজানের ইফতার আইটেম।"]
         elif "health" in category or "fitness" in category:
             titles = ["সকালের রুটিন | Morning Routine Bangla", "ডায়াবেটিস নিয়ন্ত্রণ | Bangla", "ব্যায়াম গাইড | Workout Bangla 2026"]
@@ -201,7 +179,7 @@ def do_upload_for_user(user):
             titles = ["আম পাকা জাম পাকা | Bangla Rhymes 2026", "নতুন বাংলা ছড়া | Kids Song 2026", "রঙিন দুনিয়া | Colorful Kids Video"]
             descs = ["শিশুদের মজার বাংলা ছড়া।", "নতুন বাংলা ছড়া।", "শিশুদের শেখার ভিডিও।"]
         elif "business" in category or "finance" in category or "entrepreneur" in category:
-            titles = ["৫০০০ টাকায় ব্যবসা | Small Business Bangla", "অনলাইন ব্যবসারアイデア | Bangla 2026", "ফ্রিল্যান্সিং গাইড | Bangla Tutorial"]
+            titles = ["৫০০০ টাকায় ব্যবসা | Small Business Bangla", "অনলাইন ব্যবসার আইডিয়া | Bangla 2026", "ফ্রিল্যান্সিং গাইড | Bangla Tutorial"]
             descs = ["কম টাকায় লাভজনক ব্যবসা।", "অনলাইন ব্যবসার গাইড।", "ফ্রিল্যান্সিং শুরু করার গাইড।"]
         elif "travel" in category or "vlog" in category:
             titles = ["বাংলাদেশের লুকানো সৌন্দর্য | Travel 2026", "সুন্দরবন ভ্রমণ | Sundarban Vlog", "সেন্টমার্টিন ভ্রমণ | Travel Vlog"]
@@ -214,7 +192,7 @@ def do_upload_for_user(user):
             descs = ["সেরা বাজেট স্মার্টফোন রিভিউ।", "AI tools guide.", "Phone comparison guide."]
         elif "horror" in category or "bhoot" in category:
             titles = ["ভুতুড়ে বাড়ির গল্প | Horror Story Bangla", "রাত ৩টার রহস্য | Midnight Horror Bangla", "সত্যিকারের ভূত | Real Ghost Story Bangla"]
-            descs = ["ভয়ংকর ভুতুড়ে স্থানের গল্প।", "রাতের রহস্যময় ঘটনা।", "সত্যিকারের भूতের অভিজ্ঞতা।"]
+            descs = ["ভয়ংকর ভুতুড়ে স্থানের গল্প।", "রাতের রহস্যময় ঘটনা।", "সত্যিকারের ভূতের অভিজ্ঞতা।"]
         else:
             titles = ["AI Systems 2026 | Bangla", "Faceless YouTube Channel Guide", "Topaz AI Tutorial 2026"]
             descs = ["AI tools guide 2026.", "Faceless channel tips.", "AI video enhancement."]
@@ -222,8 +200,8 @@ def do_upload_for_user(user):
         idx = random.randint(0, len(titles) - 1)
         selected_title = titles[idx]
         
-        # 🚀 আপলোডের ঠিক আগে ডাইনামিক রিয়েল ভিডিও ফাইল জেনারেশন ট্রিগার
-        generate_ai_video_file(category, selected_title)
+        # 🚀 আপলোডের ঠিক আগে ব্যাকগ্রাউন্ডে রিয়েল ভিডিও ফাইল ডাউনলোডার ট্রিগার
+        generate_real_ai_video(category)
         
         today_str = datetime.now().strftime("%Y-%m-%d")
         best_time = user.get("best_time_value", "")
@@ -248,7 +226,6 @@ def do_upload_for_user(user):
         )
         print(f"✅ Auto uploaded for {user['_id']}: {resp.get('id')}")
         
-        # আপলোড শেষে ফাইল ডিলিট করে সার্ভার স্পেস ফ্রী করা
         if os.path.exists(video_file_path):
             os.remove(video_file_path)
             
@@ -344,7 +321,6 @@ def index():
                     session.clear()
                     return "<h1>Account Blocked By Admin!</h1><a href='/logout'>Go Back</a>"
                 
-                # রিয়েল-টাইমে বেস্ট আপলোড টাইম ক্যালকুলেশন ভ্যালু পাঠানো
                 best_time_generated = get_best_upload_time(user_info)
                 
                 return render_template(
@@ -497,7 +473,6 @@ def get_live_ai_data():
     category = user_info.get('category', 'General')
     best_time = get_best_upload_time(user_info)
     
-    # ড্যাশবোর্ডের জন্য রিয়েল-টাইম মেটাডেটা জেনারেশন সিমুলেশন
     return jsonify({
         "topic": f"Trending {category} Special Episode",
         "title": f"AI Masterclass: {category} 2026",
@@ -516,7 +491,6 @@ def upload_video():
     if not user_info:
         return jsonify({"status": "ERROR", "message": "User not found!"})
     
-    # ম্যানুয়াল টেস্ট ট্রিগার ট্রাফিক ম্যাচার
     threading.Thread(target=do_upload_for_user, args=(user_info,), daemon=True).start()
     return jsonify({"status": "SUCCESS", "message": "AI Generator Triggered Live!"})
 
