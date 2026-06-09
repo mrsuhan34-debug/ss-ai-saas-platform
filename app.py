@@ -14,8 +14,6 @@ from pymongo import MongoClient
 from apscheduler.schedulers.background import BackgroundScheduler
 
 # এআই ভিডিও ম্যাকিং ইঞ্জিনের জন্য প্রয়োজনীয় ফ্রি লাইব্রেরিস
-from gtts import gTTS
-from moviepy.editor import ColorClip, AudioFileClip, TextClip, CompositeVideoClip
 
 app = Flask(__name__)
 
